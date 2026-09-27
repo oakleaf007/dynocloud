@@ -54,7 +54,7 @@ public class JwtServiceImpl implements JwtService{
 	}
 
 	@Override
-	public String extractusername(String token) {
+	public String extractUsername(String token) {
 		// TODO Auto-generated method stub
 		return null;
 	}
