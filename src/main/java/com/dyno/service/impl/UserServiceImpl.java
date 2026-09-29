@@ -1,5 +1,6 @@
 package com.dyno.service.impl;
 
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.dyno.dto.UserResponse;
@@ -29,5 +30,15 @@ public class UserServiceImpl implements UserService{
 					user.getEmail()
 				);
 	}
+
+
+	@Override
+	public User getUserByUsername(String username) {
+		return userRepository.findByUsername(username)
+				.orElseThrow(()->
+					new UsernameNotFoundException("user not found"));
+					
+				}
+	
 
 }
