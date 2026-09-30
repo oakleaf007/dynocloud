@@ -12,6 +12,8 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
+
+// Mapping user data
 @Entity
 @Table(name="users")
 public class User {

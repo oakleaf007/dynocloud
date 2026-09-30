@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.dyno.dto.LoginReq;
+import com.dyno.dto.LoginResponse;
 import com.dyno.dto.RegisterReq;
 import com.dyno.entity.User;
 import com.dyno.execption.EmailAlreadyExistsException;
@@ -16,7 +17,6 @@ import com.dyno.execption.UsernameAlreadyExistsException;
 import com.dyno.repository.UserRepository;
 import com.dyno.service.AuthService;
 import com.dyno.service.JwtService;
-import com.dyno.service.LoginResponse;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -34,6 +34,7 @@ public class AuthServiceImpl implements AuthService {
 		this.authenticationManager=authenticationManager;
 		this.jwtService=jwtService;
 	}
+//	sign up or registration
 	public void register(RegisterReq request) {
 		if(userRepository.existsByUsername(request.getUsername())) {
 			throw new UsernameAlreadyExistsException("username already exists");
@@ -58,6 +59,8 @@ public class AuthServiceImpl implements AuthService {
 		userRepository.save(user);
 	
 	}
+	
+//	login (utilizes AuthenticationManager)
 	public LoginResponse login(LoginReq request) {
 		
 		try {

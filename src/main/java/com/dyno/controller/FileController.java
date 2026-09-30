@@ -2,8 +2,13 @@ package com.dyno.controller;
 
 import java.io.IOException;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -28,17 +33,9 @@ public class FileController {
 		this.userService=userService;
 	}
 	
-	@PostMapping("/upload/upload-file")
-	public ResponseEntity<?> upload(
-				@RequestParam("file") MultipartFile file,
-				Authentication authentication
-			) throws IOException{
-		
-		return ResponseEntity.ok().build();
-		
-	}
 	
-	@PostMapping("/upload/upload-test")
+	
+	@PostMapping("/upload/upload-file")
 	public ResponseEntity<FileResponse> uploadTest(
 	        @RequestParam("file") MultipartFile file,
 	        Authentication authentication) throws IOException {
@@ -58,6 +55,23 @@ public class FileController {
 	    		);
 
 	    return ResponseEntity.ok(res);
+	}
+	
+	@GetMapping("/getFiles")
+	public ResponseEntity<Page<FileResponse>> getFiles(
+			Authentication authentication,
+			@PageableDefault(
+					size=20,
+					sort= "createdAt",
+					direction = Sort.Direction.DESC
+					)
+			Pageable pageable
+			){
+		String username = authentication.getName();
+		return ResponseEntity.ok(
+				fileService.getUserFiles(username, pageable)
+				);
+		
 	}
 	
 	

@@ -21,6 +21,10 @@ import com.nimbusds.jose.proc.SecurityContext;
 @Configuration
 public class JwtKeyConfig {
 	
+/*	It is responsible for reading the private key from the
+ * pem file and store as JAVA RSA key
+
+*/
 	@Bean
 	public RSAPrivateKey privateKey() throws Exception{
 		return RsaKeyConverters.pkcs8()
@@ -32,6 +36,10 @@ public class JwtKeyConfig {
 				
 	}
 	
+/*	It is responsible for reading the public key from the
+	 * pem file and store as JAVA RSA key
+
+	*/
 	@Bean
 	public RSAPublicKey publicKey() throws Exception{
 		return RsaKeyConverters.x509()
@@ -41,6 +49,7 @@ public class JwtKeyConfig {
 				);
 	}
 	
+//	this is for encoding the jwt
 	
 	@Bean
 	public JwtEncoder jwtEncoder(
@@ -55,9 +64,12 @@ public class JwtKeyConfig {
 		JWKSource<SecurityContext> jwkSource=
 				new ImmutableJWKSet<>(new JWKSet(rsakey));
 		
+//		actual jwt creation and returning it
 		return new NimbusJwtEncoder(jwkSource);
 	}
 	
+	
+//	this is for decoding the jwt
 	@Bean
 	public JwtDecoder jwtDecoder(RSAPublicKey publicKey) {
 		return NimbusJwtDecoder

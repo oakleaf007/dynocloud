@@ -45,6 +45,20 @@ public class FileResponse {
 		this.ownerId = ownerId;
 	}
 
+	
+
+	public FileResponse(@NotBlank UUID id, @NotBlank String originalName, @NotBlank String contentType,
+			@NotBlank long sizeBytes, @NotBlank Instant createdAt) {
+		super();
+		this.id = id;
+		this.originalName = originalName;
+		this.contentType = contentType;
+		this.sizeBytes = sizeBytes;
+		this.createdAt = createdAt;
+	}
+
+
+
 	public UUID getId() {
 		return id;
 	}

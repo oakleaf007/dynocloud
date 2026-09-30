@@ -1,4 +1,4 @@
-package com.dyno.service;
+package com.dyno.dto;
 
 public class LoginResponse {
 	private String message;

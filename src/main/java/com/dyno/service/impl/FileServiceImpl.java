@@ -3,12 +3,17 @@ package com.dyno.service.impl;
 import java.io.IOException;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.dyno.dto.FileResponse;
 import com.dyno.entity.File;
 import com.dyno.entity.User;
+import com.dyno.execption.ResourceNotFoundException;
 import com.dyno.repository.StoredFileRepository;
+import com.dyno.repository.UserRepository;
 import com.dyno.service.FileService;
 import com.dyno.service.ObjectKeyService;
 import com.dyno.service.StorageService;
@@ -18,14 +23,17 @@ public class FileServiceImpl implements FileService{
 	private final StorageService storageService;
 	private final StoredFileRepository fileRepository;
 	private final ObjectKeyService objectKeyService;
+	private final UserRepository userRepository;
+	
 	
 	
 	public FileServiceImpl(StorageService storageService, StoredFileRepository fileRepository,
-			ObjectKeyService objectKeyService) {
+			ObjectKeyService objectKeyService, UserRepository userRepository) {
 		super();
 		this.storageService = storageService;
 		this.fileRepository = fileRepository;
 		this.objectKeyService = objectKeyService;
+		this.userRepository = userRepository;
 	}
 
 
@@ -60,6 +68,26 @@ public class FileServiceImpl implements FileService{
 		return fileRepository.save(storedFile);
 		
 	
+	}
+
+
+	@Override
+	public Page<FileResponse> getUserFiles(String username, Pageable pageable) {
+		
+		User user = userRepository.findByUsername(username)
+					.orElseThrow(()->
+						new ResourceNotFoundException("User not found")
+								);
+		
+		return fileRepository
+				.findByOwnerId(user.getId(), pageable)
+				.map(file-> new FileResponse(
+						file.getId(),
+						file.getOriginalName(),
+						file.getContentType(),
+						file.getSizeBytes(),
+						file.getCreatedAt()
+						));
 	}
 	
 	

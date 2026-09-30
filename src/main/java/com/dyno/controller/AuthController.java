@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.dyno.dto.LoginReq;
+import com.dyno.dto.LoginResponse;
 import com.dyno.dto.RegisterReq;
 import com.dyno.service.AuthService;
-import com.dyno.service.LoginResponse;
 
 import jakarta.validation.Valid;
 

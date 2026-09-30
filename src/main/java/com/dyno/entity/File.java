@@ -16,6 +16,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
+//Mapping uploaded file information/metadata
 @Entity
 @Table(
 		name="files",
@@ -25,7 +26,8 @@ import jakarta.persistence.Table;
 		}
 		)
 public class File {
-
+	
+//	Id generated in the service file
 	@Id
 	private UUID id;
 	
@@ -47,6 +49,8 @@ public class File {
 	@Column(name="updated_at", nullable=false)
 	private Instant updatedAt;
 	
+	
+
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name="owner_id", nullable = false)
 	private User owner;
