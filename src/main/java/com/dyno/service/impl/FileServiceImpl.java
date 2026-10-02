@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -130,6 +131,35 @@ public class FileServiceImpl implements FileService{
 		
 		return storageService.generateDownloadUrl(file.getObjectKey(), file.getContentType());
 				
+	}
+
+
+	@Override
+	public String deleteFile(String username ,UUID fileId) {
+		// TODO Auto-generated method stub
+	
+		User user = userRepository.findByUsername(username)
+					.orElseThrow(()->
+						new ResourceNotFoundException("User not found")
+							);
+		
+		File file = fileRepository.findById(fileId)
+					.orElseThrow(()->
+							new ResourceNotFoundException("File not found")
+							);
+		if(!file.getOwner().getId().equals(user.getId())) {
+			throw new ResourceNotFoundException("File Not Found");
+			
+		}
+		
+		storageService.delete(file.getObjectKey());
+		
+		fileRepository.delete(file);
+		
+		return null;
+	
+	
+	
 	}
 	
 	

@@ -65,14 +65,7 @@ public class GarageServiceImpl implements StorageService {
 	return s3Client.getObject(request);
 	}
 
-	@Override
-	public void delete(String objectKey) {
-		DeleteObjectRequest request = DeleteObjectRequest.builder()
-					.bucket(bucket)
-					.key(objectKey)
-					.build();
-		s3Client.deleteObject(request);
-	}
+
 	
 	@PostConstruct
 	public void testGarageConnection() {
@@ -104,6 +97,7 @@ public class GarageServiceImpl implements StorageService {
 					.signatureDuration(Duration.ofMinutes(10))
 					.getObjectRequest(getObjectRequest)
 					.build();
+			
 			PresignedGetObjectRequest presignedRequest =
 					s3Presigner.presignGetObject(presignRequest);
 			
@@ -112,5 +106,13 @@ public class GarageServiceImpl implements StorageService {
 		return presignedRequest.url().toString();
 	}
 	
+	@Override
+	public void delete(String objectKey) {
+		DeleteObjectRequest request = DeleteObjectRequest.builder()
+					.bucket(bucket)
+					.key(objectKey)
+					.build();
+		s3Client.deleteObject(request);
+	}
 
 }

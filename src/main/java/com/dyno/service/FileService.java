@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.dyno.dto.FileResponse;
@@ -21,5 +22,7 @@ public interface FileService {
 			Pageable pageable);
 	
 	String generateDownloadUrl(String username, UUID fileId);
+	
+	String deleteFile(String username, UUID fileId);
 
 }
