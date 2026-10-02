@@ -1,6 +1,7 @@
 package com.dyno.controller;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,12 +10,14 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.dyno.dto.DownloadResponse;
 import com.dyno.dto.FileResponse;
 import com.dyno.entity.File;
 import com.dyno.entity.User;
@@ -39,6 +42,11 @@ public class FileController {
 	public ResponseEntity<FileResponse> uploadTest(
 	        @RequestParam("file") MultipartFile file,
 	        Authentication authentication) throws IOException {
+
+		System.out.println("========== UPLOAD ==========");
+	    System.out.println("Name: " + file.getOriginalFilename());
+	    System.out.println("Content-Type: " + file.getContentType());
+	    System.out.println("Size: " + file.getSize());
 
 	    User user = userService.getUserByUsername(authentication.getName());
 
@@ -71,6 +79,17 @@ public class FileController {
 		return ResponseEntity.ok(
 				fileService.getUserFiles(username, pageable)
 				);
+		
+	}
+	@GetMapping("/{fileId}/download")
+	public ResponseEntity<DownloadResponse> download(@PathVariable("fileId") UUID fileId,
+			Authentication authentication){
+		String username = authentication.getName();
+		
+		String url = fileService.generateDownloadUrl(username, fileId);
+		
+		return ResponseEntity.ok(
+				new DownloadResponse(url));
 		
 	}
 	

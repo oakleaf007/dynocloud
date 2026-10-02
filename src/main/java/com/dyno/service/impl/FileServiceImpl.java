@@ -1,6 +1,9 @@
 package com.dyno.service.impl;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -17,6 +20,9 @@ import com.dyno.repository.UserRepository;
 import com.dyno.service.FileService;
 import com.dyno.service.ObjectKeyService;
 import com.dyno.service.StorageService;
+
+
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
 @Service
 public class FileServiceImpl implements FileService{
@@ -48,12 +54,24 @@ public class FileServiceImpl implements FileService{
 		
 		String objectKey = objectKeyService.generate(user.getId(),  fileId);
 
-		storageService.upload(
-					file.getBytes(),
-					file.getSize(),
-					file.getContentType(),
-					objectKey
-				);
+		Path tempFile = Files.createTempFile("dynocloud-", ".upload");
+		
+		try {
+			file.transferTo(tempFile);
+		
+				storageService.upload(
+						tempFile,
+						Files.size(tempFile),
+						file.getContentType(),
+						objectKey
+					);
+		
+		}finally {
+			Files.deleteIfExists(tempFile);
+		}
+		
+		
+		
 		
 		File storedFile = new File();
 		
@@ -89,6 +107,35 @@ public class FileServiceImpl implements FileService{
 						file.getCreatedAt()
 						));
 	}
+
+
+	@Override
+	public String generateDownloadUrl(String username, UUID fileId) {
+		// TODO Auto-generated method stub
+		
+		User user = userRepository.findByUsername(username)
+					.orElseThrow(()->
+						new ResourceNotFoundException("User not found")
+							);
+		
+		File file = fileRepository.findById(fileId)
+					.orElseThrow(()->
+						new ResourceNotFoundException("File not found")
+							);
+		
+		if(!file.getOwner().getId().equals(user.getId())) {
+			throw new ResourceNotFoundException("File not found");
+			
+		}
+		
+		return storageService.generateDownloadUrl(file.getObjectKey(), file.getContentType());
+				
+	}
+	
+	
+
+
+	
 	
 	
 

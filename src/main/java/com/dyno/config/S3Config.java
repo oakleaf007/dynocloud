@@ -6,13 +6,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import jakarta.annotation.PostConstruct;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 @Configuration
 public class S3Config {
@@ -55,14 +56,27 @@ public class S3Config {
 		
 	}
 	
-	@PostConstruct
-	public void debugGarageConfig() {
-	    System.out.println("Garage endpoint = " + endpoint);
-	    System.out.println("Garage region   = " + region);
-	    System.out.println("Garage access   = " + accessKey);
-	    System.out.println("Garage secret length = " +
-	            (secretKey == null ? "NULL" : secretKey.length()));
-	}
+
+	@Bean
+	public S3Presigner s3presigner() {
+		AwsBasicCredentials credentials = 
+				AwsBasicCredentials.create(accessKey, secretKey);
+		
+		S3Configuration s3Configuration = S3Configuration.builder()
+				.pathStyleAccessEnabled(true)
+				
+				.build();
+		
+				return S3Presigner.builder()
+						.endpointOverride(URI.create(endpoint))
+						.region(Region.of(region))
+						.credentialsProvider(
+								StaticCredentialsProvider.create(credentials)
+								)
+						.serviceConfiguration(s3Configuration)
+						.build();
+	}	
+	
 }
 
 

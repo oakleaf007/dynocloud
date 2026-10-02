@@ -2,6 +2,7 @@ package com.dyno.service;
 
 
 import java.io.IOException;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,5 +19,7 @@ public interface FileService {
 	
 	Page<FileResponse> getUserFiles(String username,
 			Pageable pageable);
+	
+	String generateDownloadUrl(String username, UUID fileId);
 
 }

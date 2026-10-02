@@ -1,6 +1,8 @@
 package com.dyno.service.impl;
 
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.time.Duration;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -14,25 +16,32 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 @Service
 public class GarageServiceImpl implements StorageService {
 	
-	private final S3Client s3Client;
+
 
 	@Value("${garage.bucket}")
 	private String bucket;
 	
-	
+	private final S3Client s3Client;
+	private final S3Presigner s3Presigner;
 	
 
-	public GarageServiceImpl(S3Client s3Client) {
+	public GarageServiceImpl(S3Client s3Client, S3Presigner s3Presigner) {
 		
 		this.s3Client = s3Client;
+		this.s3Presigner = s3Presigner;
 	}
 
 	@Override
-	public String upload(byte[] data, long contentLength, String contentType, String objectKey) {
+	public String upload(Path file, long contentLength, String contentType, String objectKey) {
+		
+		
 		PutObjectRequest request = PutObjectRequest.builder()
 								.bucket(bucket)
 								.key(objectKey)
@@ -42,7 +51,7 @@ public class GarageServiceImpl implements StorageService {
 		
 		s3Client.putObject(
 				request, 
-				RequestBody.fromBytes(data)
+				RequestBody.fromFile(file)
 				);
 		return objectKey;
 	}
@@ -76,5 +85,32 @@ public class GarageServiceImpl implements StorageService {
 
 	    System.out.println("===== GARAGE CONNECTION SUCCESS =====");
 	}
+
+	@Override
+	public String generateDownloadUrl(String objectKey, String contentType) {
+		// TODO Auto-generated method stub
+		System.out.println("BUCKET = " + bucket);
+	    System.out.println("OBJECT KEY = " + objectKey);
+
+
+			GetObjectRequest getObjectRequest =
+					GetObjectRequest.builder()
+					.bucket(bucket)
+					.key(objectKey)
+					.build();
+			
+			GetObjectPresignRequest presignRequest =
+					GetObjectPresignRequest.builder()
+					.signatureDuration(Duration.ofMinutes(10))
+					.getObjectRequest(getObjectRequest)
+					.build();
+			PresignedGetObjectRequest presignedRequest =
+					s3Presigner.presignGetObject(presignRequest);
+			
+	
+
+		return presignedRequest.url().toString();
+	}
+	
 
 }
