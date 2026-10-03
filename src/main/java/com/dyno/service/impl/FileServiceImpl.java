@@ -161,6 +161,32 @@ public class FileServiceImpl implements FileService{
 	
 	
 	}
+
+
+	@Override
+	public FileResponse renameFile(User user, UUID fileId, String newName) {
+		// TODO Auto-generated method stub
+		File file = fileRepository.findByIdAndOwner(fileId, user)
+					.orElseThrow(()->
+					new ResourceNotFoundException("File not found")
+							);
+		file.setOriginalName(newName);
+		
+		File updatedFile = fileRepository.save(file);
+		
+		return new FileResponse(
+				  updatedFile.getId(),
+			        updatedFile.getOriginalName(),
+			        updatedFile.getObjectKey(),
+			        updatedFile.getContentType(),
+			        updatedFile.getSizeBytes(),
+			        updatedFile.getCreatedAt(),
+			        updatedFile.getOwner().getId()
+				);
+		
+		
+	
+	}
 	
 	
 

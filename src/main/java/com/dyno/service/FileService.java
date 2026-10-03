@@ -24,5 +24,8 @@ public interface FileService {
 	String generateDownloadUrl(String username, UUID fileId);
 	
 	String deleteFile(String username, UUID fileId);
+	
+	FileResponse renameFile(User user, UUID fileId, String newName);
+	
 
 }
