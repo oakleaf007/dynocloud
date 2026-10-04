@@ -5,6 +5,8 @@ import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -56,6 +58,18 @@ public class File {
 	private User owner;
 	
 	
+	@Enumerated(EnumType.STRING)
+	@Column(name="status",nullable=false)
+	private FileStatus status;
+	
+	public FileStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(FileStatus status) {
+		this.status = status;
+	}
+
 	@PrePersist
 	protected void onCreate() {
 		Instant now = Instant.now();

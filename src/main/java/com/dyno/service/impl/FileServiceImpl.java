@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -12,8 +13,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.dyno.cleanup.CleanupStatus;
+import com.dyno.cleanup.StorageCleanup;
+import com.dyno.cleanup.StorageCleanupRepo;
 import com.dyno.dto.FileResponse;
 import com.dyno.entity.File;
+import com.dyno.entity.FileStatus;
 import com.dyno.entity.User;
 import com.dyno.execption.ResourceNotFoundException;
 import com.dyno.repository.StoredFileRepository;
@@ -31,16 +36,18 @@ public class FileServiceImpl implements FileService{
 	private final StoredFileRepository fileRepository;
 	private final ObjectKeyService objectKeyService;
 	private final UserRepository userRepository;
+	private final StorageCleanupRepo cleanupRepo;
 	
 	
 	
 	public FileServiceImpl(StorageService storageService, StoredFileRepository fileRepository,
-			ObjectKeyService objectKeyService, UserRepository userRepository) {
+			ObjectKeyService objectKeyService, UserRepository userRepository, StorageCleanupRepo cleanupRepo) {
 		super();
 		this.storageService = storageService;
 		this.fileRepository = fileRepository;
 		this.objectKeyService = objectKeyService;
 		this.userRepository = userRepository;
+		this.cleanupRepo = cleanupRepo;
 	}
 
 
@@ -57,35 +64,62 @@ public class FileServiceImpl implements FileService{
 
 		Path tempFile = Files.createTempFile("dynocloud-", ".upload");
 		
+
+	
 		try {
+			File storedFile = new File();
+			
+			storedFile.setId(fileId);
+			storedFile.setOriginalName(file.getOriginalFilename());
+			storedFile.setObjectKey(objectKey);
+			storedFile.setContentType(file.getContentType());
+			storedFile.setSizeBytes(file.getSize());
+			storedFile.setOwner(user);
+			
+			
 			file.transferTo(tempFile);
-		
+			
+			
 				storageService.upload(
 						tempFile,
 						Files.size(tempFile),
 						file.getContentType(),
 						objectKey
 					);
+			
+				
 		
-		}finally {
+			
+			storedFile.setStatus(FileStatus.AVAILABLE);
+
+				return fileRepository.save(storedFile);
+				
+				
+		}
+		catch(Exception ex){
+			
+			
+			        try {
+			            storageService.delete(objectKey);
+
+			        } catch (Exception cleanupEx) {
+			            StorageCleanup task = new StorageCleanup();
+
+			            task.setObjectKey(objectKey);
+			            task.setStatus(CleanupStatus.PENDING);
+			            task.setAttempt(1);
+			            task.setNextRetryAt(Instant.now());
+			            task.setCreatedAt(Instant.now());
+
+			            cleanupRepo.save(task);
+			        }
+			
+			throw ex;
+			
+		}
+		finally {
 			Files.deleteIfExists(tempFile);
 		}
-		
-		
-		
-		
-		File storedFile = new File();
-		
-		storedFile.setId(fileId);
-		storedFile.setOriginalName(file.getOriginalFilename());
-		storedFile.setObjectKey(objectKey);
-		storedFile.setContentType(file.getContentType());
-		storedFile.setSizeBytes(file.getSize());
-		storedFile.setOwner(user);
-		
-		
-		return fileRepository.save(storedFile);
-		
 	
 	}
 
