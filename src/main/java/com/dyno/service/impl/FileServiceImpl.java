@@ -87,9 +87,6 @@ public class FileServiceImpl implements FileService{
 						objectKey
 					);
 			
-				
-		
-			
 			storedFile.setStatus(FileStatus.AVAILABLE);
 
 				return fileRepository.save(storedFile);

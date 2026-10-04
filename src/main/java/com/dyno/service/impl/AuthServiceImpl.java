@@ -7,32 +7,42 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.dyno.config.StorageProperties;
 import com.dyno.dto.LoginReq;
 import com.dyno.dto.LoginResponse;
 import com.dyno.dto.RegisterReq;
+import com.dyno.entity.Storage;
 import com.dyno.entity.User;
 import com.dyno.execption.EmailAlreadyExistsException;
 import com.dyno.execption.InvalidCredentialException;
 import com.dyno.execption.UsernameAlreadyExistsException;
+import com.dyno.repository.StorageAccountRepo;
 import com.dyno.repository.UserRepository;
 import com.dyno.service.AuthService;
 import com.dyno.service.JwtService;
 
+import jakarta.transaction.Transactional;
+
 @Service
+@Transactional
 public class AuthServiceImpl implements AuthService {
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final AuthenticationManager authenticationManager;
 	private final JwtService jwtService;
+	private final StorageProperties storageProperties;
+	private final StorageAccountRepo storageRepo;
 	
 	
 	public AuthServiceImpl(UserRepository userRepository, 
 			PasswordEncoder passwordEncoder,AuthenticationManager authenticationManager,
-			JwtService jwtService) {
+			JwtService jwtService, StorageProperties storageProperties, StorageAccountRepo storageRepo) {
 		this.userRepository=userRepository;
 		this.passwordEncoder=passwordEncoder;
 		this.authenticationManager=authenticationManager;
 		this.jwtService=jwtService;
+		this.storageProperties = storageProperties;
+		this.storageRepo = storageRepo;
 	}
 //	sign up or registration
 	public void register(RegisterReq request) {
@@ -49,15 +59,25 @@ public class AuthServiceImpl implements AuthService {
 		user.setUsername(request.getUsername());
 		user.setEmail(request.getEmail());
 		
-		user.setHashedPass(passwordEncoder.encode(request.getPassword()));
+		user.setHashedPass(passwordEncoder.encode(
+				request.getPassword()
+				));
 		
 		
-		user.setRecoveryPhraseHash(passwordEncoder.encode(request.getRecoveryPhrase()));
+		user.setRecoveryPhraseHash(passwordEncoder.encode(
+				request.getRecoveryPhrase()));
 		
 		user.setEmailVerified(false);
 		
-		userRepository.save(user);
-	
+		User savedUser=userRepository.save(user);
+		Storage storage = new Storage();
+		
+		storage.setUser(savedUser);
+		storage.setQuotaBytes(storageProperties.getDefaultQuotaBytes());
+		
+		storage.setUsedBytes(0L);
+		
+		storageRepo.save(storage);
 	}
 	
 //	login (utilizes AuthenticationManager)
