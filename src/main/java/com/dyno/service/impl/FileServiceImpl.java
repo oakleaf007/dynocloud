@@ -133,7 +133,8 @@ public class FileServiceImpl implements FileService{
 								);
 		
 		return fileRepository
-				.findByOwnerId(user.getId(), pageable)
+				.findByOwnerIdAndStatus(user.getId(),FileStatus.AVAILABLE, pageable)
+				
 				.map(file-> new FileResponse(
 						file.getId(),
 						file.getOriginalName(),
