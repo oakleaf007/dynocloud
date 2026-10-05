@@ -1,7 +1,6 @@
 package com.dyno.service.impl;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -9,7 +8,6 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,10 +23,8 @@ import com.dyno.repository.StoredFileRepository;
 import com.dyno.repository.UserRepository;
 import com.dyno.service.FileService;
 import com.dyno.service.ObjectKeyService;
+import com.dyno.service.StorageQuotaService;
 import com.dyno.service.StorageService;
-
-
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
 @Service
 public class FileServiceImpl implements FileService{
@@ -37,17 +33,18 @@ public class FileServiceImpl implements FileService{
 	private final ObjectKeyService objectKeyService;
 	private final UserRepository userRepository;
 	private final StorageCleanupRepo cleanupRepo;
-	
+	private final StorageQuotaService storageQuotaService;
 	
 	
 	public FileServiceImpl(StorageService storageService, StoredFileRepository fileRepository,
-			ObjectKeyService objectKeyService, UserRepository userRepository, StorageCleanupRepo cleanupRepo) {
+			ObjectKeyService objectKeyService, UserRepository userRepository, StorageCleanupRepo cleanupRepo, StorageQuotaService storageQuotaService) {
 		super();
 		this.storageService = storageService;
 		this.fileRepository = fileRepository;
 		this.objectKeyService = objectKeyService;
 		this.userRepository = userRepository;
 		this.cleanupRepo = cleanupRepo;
+		this.storageQuotaService = storageQuotaService;
 	}
 
 
@@ -64,7 +61,8 @@ public class FileServiceImpl implements FileService{
 
 		Path tempFile = Files.createTempFile("dynocloud-", ".upload");
 		
-
+		storageQuotaService.reserveQuota(user.getId(), file.getSize());
+		System.out.println("file size: "+file.getSize());
 	
 		try {
 			File storedFile = new File();
@@ -87,6 +85,8 @@ public class FileServiceImpl implements FileService{
 						objectKey
 					);
 			
+			storageQuotaService.finalizeQuota(user.getId(), file.getSize());
+				
 			storedFile.setStatus(FileStatus.AVAILABLE);
 
 				return fileRepository.save(storedFile);
@@ -98,6 +98,7 @@ public class FileServiceImpl implements FileService{
 			
 			        try {
 			            storageService.delete(objectKey);
+			            storageQuotaService.releaseQuota(user.getId(), file.getSize());
 
 			        } catch (Exception cleanupEx) {
 			            StorageCleanup task = new StorageCleanup();
@@ -184,7 +185,11 @@ public class FileServiceImpl implements FileService{
 			
 		}
 		
+		System.out.println("file size: "+ file.getSizeBytes());
 		storageService.delete(file.getObjectKey());
+		
+		
+		storageQuotaService.releaseUsedQuota(user.getId(), file.getSizeBytes());
 		
 		fileRepository.delete(file);
 		

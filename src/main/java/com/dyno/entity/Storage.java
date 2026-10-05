@@ -31,7 +31,8 @@ public class Storage {
 	private long usedBytes=0L;
 	
 	@Column(nullable=false)
-	private long reserveQuota=0L;
+	private long reserveByte=0L;
+
 
 
 	public UUID getId() {
@@ -73,5 +74,14 @@ public class Storage {
 		this.usedBytes = usedBytes;
 	}
 	
-	
+
+	public long getReserveByte() {
+		return reserveByte;
+	}
+
+
+	public void setReserveByte(long reserveByte) {
+		this.reserveByte = reserveByte;
+	}
+
 }

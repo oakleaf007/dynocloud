@@ -1,11 +1,17 @@
 package com.dyno.service;
 
+import java.util.UUID;
+
 public interface StorageQuotaService {
 	long checkQuota();
 	
-	long reserveQuota();
+	void reserveQuota(UUID userId, long fileSize);
 	
-	long finalizeQuota();
+	void finalizeQuota(UUID userId, long fileSize);
 	
-	long releaseQuota();
+	void releaseQuota(UUID userId, long fileSize);
+
+	void releaseUsedQuota(UUID userId, long fileSize);
+
+	
 }

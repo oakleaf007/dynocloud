@@ -80,7 +80,7 @@ public class AuthServiceImpl implements AuthService {
 		storageRepo.save(storage);
 	}
 	
-//	login (utilizes AuthenticationManager)
+//	login (uses AuthenticationManager)
 	public LoginResponse login(LoginReq request) {
 		
 		try {
