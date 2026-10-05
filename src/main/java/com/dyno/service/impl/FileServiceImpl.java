@@ -55,6 +55,8 @@ public class FileServiceImpl implements FileService{
 			throw new IllegalArgumentException("File cannot be empty");
 		}
 		
+		
+		
 		UUID fileId = UUID.randomUUID();
 		
 		String objectKey = objectKeyService.generate(user.getId(),  fileId);
@@ -63,7 +65,8 @@ public class FileServiceImpl implements FileService{
 		
 		storageQuotaService.reserveQuota(user.getId(), file.getSize());
 		System.out.println("file size: "+file.getSize());
-	
+		
+		boolean storageFinalized =false;
 		try {
 			File storedFile = new File();
 			
@@ -86,7 +89,7 @@ public class FileServiceImpl implements FileService{
 					);
 			
 			storageQuotaService.finalizeQuota(user.getId(), file.getSize());
-				
+				storageFinalized = true;
 			storedFile.setStatus(FileStatus.AVAILABLE);
 
 				return fileRepository.save(storedFile);
@@ -98,13 +101,19 @@ public class FileServiceImpl implements FileService{
 			
 			        try {
 			            storageService.delete(objectKey);
-			            storageQuotaService.releaseQuota(user.getId(), file.getSize());
-
+			            if(!storageFinalized) {
+			            	 storageQuotaService.releaseQuota(user.getId(), file.getSize());
+			            }
+			           
+			            
 			        } catch (Exception cleanupEx) {
 			            StorageCleanup task = new StorageCleanup();
 
 			            task.setObjectKey(objectKey);
 			            task.setStatus(CleanupStatus.PENDING);
+			            task.setQuotaFinalized(true);
+			            task.setUserId(user.getId());
+			            task.setFileSize(file.getSize());
 			            task.setAttempt(1);
 			            task.setNextRetryAt(Instant.now());
 			            task.setCreatedAt(Instant.now());
@@ -117,6 +126,7 @@ public class FileServiceImpl implements FileService{
 		}
 		finally {
 			Files.deleteIfExists(tempFile);
+			
 		}
 	
 	}

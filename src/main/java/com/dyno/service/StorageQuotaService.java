@@ -2,6 +2,9 @@ package com.dyno.service;
 
 import java.util.UUID;
 
+import com.dyno.entity.Storage;
+import com.dyno.repository.StorageAccountRepo;
+
 public interface StorageQuotaService {
 	long checkQuota();
 	
@@ -12,6 +15,10 @@ public interface StorageQuotaService {
 	void releaseQuota(UUID userId, long fileSize);
 
 	void releaseUsedQuota(UUID userId, long fileSize);
-
+	
+	
+	
+	void reset(UUID userId);
+		
 	
 }

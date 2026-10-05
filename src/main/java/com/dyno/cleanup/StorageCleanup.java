@@ -27,6 +27,16 @@ public class StorageCleanup {
 	@Column(nullable= false)
 	private CleanupStatus status;
 	
+	
+	@Column(nullable=false)
+	private boolean quotaFinalized;
+	
+	@Column(nullable =false)
+	private UUID userId;
+	
+	@Column(nullable =false)
+	private long fileSize;
+	
 	@Column(nullable= false)
 	private int attempt;
 	
@@ -43,6 +53,25 @@ public class StorageCleanup {
 	public void setId(UUID id) {
 		this.id = id;
 	}
+	
+	public UUID getUserId() {
+		return userId;
+	}
+
+	public void setUserId(UUID userId) {
+		this.userId = userId;
+	}
+	
+	
+	
+
+	public long getFileSize() {
+		return fileSize;
+	}
+
+	public void setFileSize(long fileSize) {
+		this.fileSize = fileSize;
+	}
 
 	public String getObjectKey() {
 		return objectKey;
@@ -58,6 +87,14 @@ public class StorageCleanup {
 
 	public void setStatus(CleanupStatus status) {
 		this.status = status;
+	}
+	public boolean isQuotaFinalized() {
+		return quotaFinalized;
+	}
+
+
+	public void setQuotaFinalized(boolean quotaFinalized) {
+		this.quotaFinalized = quotaFinalized;
 	}
 
 	public int getAttempt() {

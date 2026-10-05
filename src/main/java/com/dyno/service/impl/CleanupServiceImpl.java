@@ -9,7 +9,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import com.dyno.cleanup.CleanupStatus;
 import com.dyno.cleanup.StorageCleanup;
 import com.dyno.cleanup.StorageCleanupRepo;
+import com.dyno.repository.StorageAccountRepo;
 import com.dyno.service.StorageCleanupService;
+import com.dyno.service.StorageQuotaService;
 import com.dyno.service.StorageService;
 
 public class CleanupServiceImpl implements StorageCleanupService {
@@ -17,14 +19,17 @@ public class CleanupServiceImpl implements StorageCleanupService {
 	
 	private final StorageCleanupRepo cleanupRepo;
 	private final StorageService storageService;
+	private final StorageAccountRepo storageRepo;
+	private final StorageQuotaService quotaService;
 	
 	
 	
-	
-	public CleanupServiceImpl(StorageCleanupRepo cleanupRepo, StorageService storageService) {
+	public CleanupServiceImpl(StorageCleanupRepo cleanupRepo, StorageService storageService, StorageAccountRepo storageRepo, StorageQuotaService quotaService) {
 		super();
 		this.cleanupRepo = cleanupRepo;
 		this.storageService = storageService;
+		this.storageRepo = storageRepo;
+		this.quotaService = quotaService;
 	}
 
 
@@ -42,6 +47,12 @@ public class CleanupServiceImpl implements StorageCleanupService {
 			
 			try {
 				storageService.delete(task.getObjectKey());
+				
+				if(task.isQuotaFinalized()) {
+					quotaService.releaseUsedQuota(task.getUserId(), task.getFileSize());
+					
+				}
+				
 				task.setStatus(CleanupStatus.COMPLETED);
 			}catch (Exception e) {
 				

@@ -95,6 +95,19 @@ public class StorageQuotaServiceImpl implements StorageQuotaService{
 	}
 
 
+	@Override
+	public void reset(UUID userId) {
+		// TODO Auto-generated method stub
+		Storage storage = storageRepo.findByUserId(userId)
+				.orElseThrow(()->
+					new RuntimeException("Storage account not found")
+						);
+		storage.setReserveByte(0
+							);
+	
+	}
+
+
 
 
 
