@@ -42,4 +42,10 @@ public class GlobalExceptionHandler {
 					.body(ex.getMessage());
 		
 	}
+	public ResponseEntity<String> handleEncryptionException(
+			FileEncryptionException ex){
+		return ResponseEntity
+				.status(HttpStatus.BAD_REQUEST)
+				.body(ex.getMessage());
+	}
 }

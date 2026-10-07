@@ -3,6 +3,7 @@ package com.dyno.service.impl;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.GeneralSecurityException;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -14,13 +15,16 @@ import org.springframework.web.multipart.MultipartFile;
 import com.dyno.cleanup.CleanupStatus;
 import com.dyno.cleanup.StorageCleanup;
 import com.dyno.cleanup.StorageCleanupRepo;
+import com.dyno.dto.EncryptionResult;
 import com.dyno.dto.FileResponse;
 import com.dyno.entity.File;
 import com.dyno.entity.FileStatus;
 import com.dyno.entity.User;
+import com.dyno.execption.FileEncryptionException;
 import com.dyno.execption.ResourceNotFoundException;
 import com.dyno.repository.StoredFileRepository;
 import com.dyno.repository.UserRepository;
+import com.dyno.service.EncryptionService;
 import com.dyno.service.FileService;
 import com.dyno.service.ObjectKeyService;
 import com.dyno.service.StorageQuotaService;
@@ -34,10 +38,10 @@ public class FileServiceImpl implements FileService{
 	private final UserRepository userRepository;
 	private final StorageCleanupRepo cleanupRepo;
 	private final StorageQuotaService storageQuotaService;
-	
+	private final EncryptionService encryptionService;
 	
 	public FileServiceImpl(StorageService storageService, StoredFileRepository fileRepository,
-			ObjectKeyService objectKeyService, UserRepository userRepository, StorageCleanupRepo cleanupRepo, StorageQuotaService storageQuotaService) {
+			ObjectKeyService objectKeyService, UserRepository userRepository, StorageCleanupRepo cleanupRepo, StorageQuotaService storageQuotaService, EncryptionService encryptionService) {
 		super();
 		this.storageService = storageService;
 		this.fileRepository = fileRepository;
@@ -45,6 +49,7 @@ public class FileServiceImpl implements FileService{
 		this.userRepository = userRepository;
 		this.cleanupRepo = cleanupRepo;
 		this.storageQuotaService = storageQuotaService;
+		this.encryptionService = encryptionService;
 	}
 
 
@@ -63,11 +68,18 @@ public class FileServiceImpl implements FileService{
 
 		Path tempFile = Files.createTempFile("dynocloud-", ".upload");
 		
+		Path encryptedTempFile = null;
+		
+		
 		storageQuotaService.reserveQuota(user.getId(), file.getSize());
 		System.out.println("file size: "+file.getSize());
 		
 		boolean storageFinalized =false;
+		boolean storageUploaded = false;
 		try {
+			
+			
+			
 			File storedFile = new File();
 			
 			storedFile.setId(fileId);
@@ -79,15 +91,34 @@ public class FileServiceImpl implements FileService{
 			
 			
 			file.transferTo(tempFile);
+			try {
+				EncryptionResult encryptionRes =
+						encryptionService.encrypt(tempFile);
+				
+				encryptedTempFile = encryptionRes.getEncryptedFile();
+				
+				storedFile.setEncryptedDek(encryptionRes.getEncryptedDek());;
+				
+				storedFile.setFileIv(encryptionRes.getFileIv());
+				
+				storedFile.setDekIv(encryptionRes.getDekIv());
+				storedFile.setEncryptionVersion(1);
+			}catch(GeneralSecurityException e) {
+				throw new FileEncryptionException(
+						"Failed to encrypt", e
+						);
+			}
+			
 			
 			
 				storageService.upload(
-						tempFile,
-						Files.size(tempFile),
+						encryptedTempFile,
+						Files.size(encryptedTempFile),
 						file.getContentType(),
 						objectKey
 					);
 			
+				storageUploaded= true;
 			storageQuotaService.finalizeQuota(user.getId(), file.getSize());
 				storageFinalized = true;
 			storedFile.setStatus(FileStatus.AVAILABLE);
@@ -96,11 +127,14 @@ public class FileServiceImpl implements FileService{
 				
 				
 		}
-		catch(Exception ex){
+		catch(IOException | FileEncryptionException ex){
 			
 			
 			        try {
-			            storageService.delete(objectKey);
+			        	if(storageUploaded) {
+			        		 storageService.delete(objectKey);
+			        	}
+			           
 			            if(!storageFinalized) {
 			            	 storageQuotaService.releaseQuota(user.getId(), file.getSize());
 			            }

@@ -62,6 +62,53 @@ public class File {
 	@Column(name="status",nullable=false)
 	private FileStatus status;
 	
+	@Column(name = "encrypted_dek", nullable = false)
+	private byte[] encryptedDek;
+	
+	@Column(name = "file_iv", nullable = false)
+	private byte[] fileIv;
+	
+	@Column(name = "dek_iv", nullable = false)
+	private byte[] dekIv;
+	
+	@Column(name = "encryption_version", nullable = false)
+	private Integer encryptionVersion =1 ;
+	
+	
+	
+	
+	public byte[] getEncryptedDek() {
+		return encryptedDek;
+	}
+
+	public void setEncryptedDek(byte[] encryptedDek) {
+		this.encryptedDek = encryptedDek;
+	}
+
+	public byte[] getFileIv() {
+		return fileIv;
+	}
+
+	public void setFileIv(byte[] fileIv) {
+		this.fileIv = fileIv;
+	}
+
+	public byte[] getDekIv() {
+		return dekIv;
+	}
+
+	public void setDekIv(byte[] dekIv) {
+		this.dekIv = dekIv;
+	}
+
+	public Integer getEncryptionVersion() {
+		return encryptionVersion;
+	}
+
+	public void setEncryptionVersion(Integer encryptionVersion) {
+		this.encryptionVersion = encryptionVersion;
+	}
+
 	public FileStatus getStatus() {
 		return status;
 	}
@@ -69,6 +116,8 @@ public class File {
 	public void setStatus(FileStatus status) {
 		this.status = status;
 	}
+	
+	
 
 	@PrePersist
 	protected void onCreate() {
