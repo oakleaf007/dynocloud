@@ -13,7 +13,7 @@ public interface StorageService {
 	
 	String generateDownloadUrl(String objectKey, String contentType);
 	
-	InputStream download(String objectKey);
+	void download(String objectKey, Path destination);
 	
 	void delete(String objectKey);
 	

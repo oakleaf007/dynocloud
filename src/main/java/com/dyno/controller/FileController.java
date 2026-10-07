@@ -3,10 +3,14 @@ package com.dyno.controller;
 import java.io.IOException;
 import java.util.UUID;
 
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.dyno.dto.DecryptedFile;
 import com.dyno.dto.DownloadResponse;
 import com.dyno.dto.FileResponse;
 import com.dyno.dto.RenameFileRequest;
@@ -85,8 +90,8 @@ public class FileController {
 				);
 		
 	}
-	@GetMapping("/{fileId}/download")
-	public ResponseEntity<DownloadResponse> download(@PathVariable("fileId") UUID fileId,
+	@GetMapping("/{fileId}/download-temp")
+	public ResponseEntity<DownloadResponse> downloadTemp(@PathVariable("fileId") UUID fileId,
 			Authentication authentication){
 		String username = authentication.getName();
 		
@@ -96,6 +101,28 @@ public class FileController {
 				new DownloadResponse(url));
 		
 	}
+	
+	@GetMapping("/{fileId}/download")
+	public ResponseEntity<Resource> download( @PathVariable("fileId") UUID fileId,Authentication auth ) throws IOException{
+		User user = userService.getUserByUsername(auth.getName());
+		
+		DecryptedFile decryptedFile = fileService.download(fileId, user);
+		
+		Resource resource = new FileSystemResource(decryptedFile.getPath());
+		
+		return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType(decryptedFile.getContentType()))
+				.contentLength(decryptedFile.getSize())
+				.header(
+						HttpHeaders.CONTENT_DISPOSITION,
+						"attachment: filename=\""+
+				         decryptedFile.getFileName()+ "\""
+						)
+				.body(resource);
+		
+	}
+	
+	
 	
 	@DeleteMapping("/delete/{fileId}")
 	public ResponseEntity<Void> deleteFile(

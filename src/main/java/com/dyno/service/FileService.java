@@ -6,12 +6,11 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.dyno.dto.DecryptedFile;
 import com.dyno.dto.FileResponse;
 import com.dyno.entity.File;
-
 import com.dyno.entity.User;
 
 public interface FileService {
@@ -23,6 +22,8 @@ public interface FileService {
 			Pageable pageable);
 	
 	String generateDownloadUrl(String username, UUID fileId);
+	
+	DecryptedFile download(UUID fileId, User user) throws IOException;
 	
 	String deleteFile(String username, UUID fileId);
 	

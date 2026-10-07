@@ -15,12 +15,14 @@ import org.springframework.web.multipart.MultipartFile;
 import com.dyno.cleanup.CleanupStatus;
 import com.dyno.cleanup.StorageCleanup;
 import com.dyno.cleanup.StorageCleanupRepo;
+import com.dyno.dto.DecryptedFile;
 import com.dyno.dto.EncryptionResult;
 import com.dyno.dto.FileResponse;
 import com.dyno.entity.File;
 import com.dyno.entity.FileStatus;
 import com.dyno.entity.User;
 import com.dyno.execption.FileEncryptionException;
+import com.dyno.execption.InvalidCredentialException;
 import com.dyno.execption.ResourceNotFoundException;
 import com.dyno.repository.StoredFileRepository;
 import com.dyno.repository.UserRepository;
@@ -267,6 +269,54 @@ public class FileServiceImpl implements FileService{
 		
 		
 	
+	}
+
+
+	@Override
+	public DecryptedFile download(UUID fileId, User user) throws IOException {
+		// TODO Auto-generated method stub
+		File storedFile = fileRepository.findById(fileId)
+						.orElseThrow(
+								()->new ResourceNotFoundException("File not found")
+								);
+		if(!storedFile.getOwner().getId().equals(user.getId())) {
+			throw new InvalidCredentialException(" You dont have access to this file");
+		}
+		
+		Path encryptedTempFile = Files.createTempFile("dynocloud-download-", ".enc");
+		Files.deleteIfExists(encryptedTempFile);
+		Path decryptedTempFile = Files.createTempFile("dynocloud-download-",".dec");
+		
+		try {
+			storageService.download(storedFile.getObjectKey(), encryptedTempFile);
+			encryptionService.decrypt(encryptedTempFile, 
+					decryptedTempFile, 
+					storedFile.getEncryptedDek(), 
+					storedFile.getFileIv(), 
+					storedFile.getDekIv());
+			
+			Files.deleteIfExists(encryptedTempFile);
+			
+			return new DecryptedFile(decryptedTempFile,
+					storedFile.getOriginalName(),
+					storedFile.getContentType(),
+					Files.size(decryptedTempFile)
+					);
+					
+		}catch(GeneralSecurityException ex) {
+			
+			Files.deleteIfExists(decryptedTempFile);
+			
+			
+			throw new FileEncryptionException(" Failed to decrypt", ex);
+			
+		}
+		catch(IOException ex) {
+			Files.deleteIfExists(decryptedTempFile);
+			throw ex;
+		}finally {
+			Files.deleteIfExists(encryptedTempFile);
+		}
 	}
 	
 	

@@ -134,10 +134,68 @@ public class EncryptionServiceImpl implements EncryptionService {
 		return bytes;
 	}
 	
+
+
+
 	@Override
-	public void decrypt() {
+	public void decrypt(Path encryptFile, Path outputFile, byte[] encryptedDek, byte[] fileIv, byte[] dekIv)
+			throws IOException, GeneralSecurityException {
 		// TODO Auto-generated method stub
 		
+		SecretKey dek = decryptDek(encryptedDek, dekIv);
+		
+		decryptFile(encryptFile, outputFile, dek, fileIv);
+		
+	}
+	
+	private SecretKey decryptDek(
+			byte[] encryptedDek, byte[] dekIv
+			) throws GeneralSecurityException{
+		
+Cipher cipher= Cipher.getInstance("AES/GCM/NoPadding");
+		
+		GCMParameterSpec spec = new GCMParameterSpec(
+					GCM_TAG_LENGTH, dekIv
+				);
+		cipher.init(Cipher.DECRYPT_MODE, kek, spec);
+		
+		byte[] dekBytes = cipher.doFinal(encryptedDek);
+		return new SecretKeySpec(dekBytes, "AES");
+	}
+	
+	private void decryptFile(
+			Path encryptedFile, Path outputFile,
+			SecretKey dek, byte[] fileIv
+			) throws IOException, GeneralSecurityException{
+          Cipher cipher= Cipher.getInstance("AES/GCM/NoPadding");
+		
+		GCMParameterSpec spec = new GCMParameterSpec(
+					GCM_TAG_LENGTH, fileIv
+				);
+		cipher.init(Cipher.DECRYPT_MODE, dek, spec);
+		
+		try(
+				InputStream input = Files.newInputStream(encryptedFile);
+				OutputStream output = Files.newOutputStream(outputFile)
+				){
+			byte[] buffer = new byte[8192];
+			
+			int bytesRead;
+			
+			while((bytesRead = input.read(buffer))!=-1) {
+				
+				byte[] decrypted = cipher.update(buffer, 0, bytesRead);
+				
+				if(decrypted != null) {
+					output.write(decrypted);
+				}
+			}
+			byte[] finalBytes = cipher.doFinal();
+			
+			output.write(finalBytes);
+			
+			
+		}
 	}
 
 }

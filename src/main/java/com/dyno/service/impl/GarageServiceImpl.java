@@ -11,6 +11,7 @@ import com.dyno.service.StorageService;
 
 import jakarta.annotation.PostConstruct;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -56,14 +57,8 @@ public class GarageServiceImpl implements StorageService {
 		return objectKey;
 	}
 
-	@Override
-	public InputStream download(String objectKey) {
-	GetObjectRequest request = GetObjectRequest.builder()
-					.bucket(bucket)
-					.key(objectKey)
-					.build();
-	return s3Client.getObject(request);
-	}
+
+
 
 
 	
@@ -107,6 +102,19 @@ public class GarageServiceImpl implements StorageService {
 	}
 	
 	@Override
+	public void download(String objectKey, Path destination) {
+		// TODO Auto-generated method stub
+		
+		GetObjectRequest request = GetObjectRequest.builder()
+									.bucket(bucket)
+									.key(objectKey)
+									.build();
+		s3Client.getObject(request, ResponseTransformer.toFile(destination));
+		
+	}
+	
+	
+	@Override
 	public void delete(String objectKey) {
 		DeleteObjectRequest request = DeleteObjectRequest.builder()
 					.bucket(bucket)
@@ -114,5 +122,7 @@ public class GarageServiceImpl implements StorageService {
 					.build();
 		s3Client.deleteObject(request);
 	}
+
+	
 
 }
