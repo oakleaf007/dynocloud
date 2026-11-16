@@ -1,6 +1,8 @@
 package com.dyno.config;
 
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 
@@ -25,10 +27,10 @@ import com.nimbusds.jose.proc.SecurityContext;
 public class JwtKeyConfig {
 	
 	@Value("${app.security.private-key-path}")
-	private Resource privateKeyResource;
+	private String privateKeyPath;
 	
 	@Value("${app.security.public-key-path}")
-	private Resource publicKeyResource;
+	private String publicKeyPath;
 	
 /*	It is  for reading the private key from the
  * pem file and store as JAVA RSA key
@@ -36,7 +38,7 @@ public class JwtKeyConfig {
 */
 	@Bean
 	public RSAPrivateKey privateKey() throws Exception{
-		try(InputStream inputStream = privateKeyResource.getInputStream()){
+		try(InputStream inputStream = Files.newInputStream(Path.of(privateKeyPath))){
 			return RsaKeyConverters.pkcs8().convert(inputStream);
 		}
 				
@@ -48,7 +50,7 @@ public class JwtKeyConfig {
 	*/
 	@Bean
 	public RSAPublicKey publicKey() throws Exception{
-		try(InputStream inputStream = publicKeyResource.getInputStream()){
+		try(InputStream inputStream = Files.newInputStream(Path.of(publicKeyPath))){
 			return RsaKeyConverters.x509().convert(inputStream);
 		}
 	}

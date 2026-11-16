@@ -42,3 +42,8 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+tasks.named('bootJar'){
+
+	exclude('**/*.pem', '**/*.key')
+	
+}
