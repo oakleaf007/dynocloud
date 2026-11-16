@@ -1,11 +1,14 @@
 package com.dyno.config;
 
+import java.io.InputStream;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.security.converter.RsaKeyConverters;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -21,32 +24,33 @@ import com.nimbusds.jose.proc.SecurityContext;
 @Configuration
 public class JwtKeyConfig {
 	
-/*	It is responsible for reading the private key from the
+	@Value("${app.security.private-key-path}")
+	private Resource privateKeyResource;
+	
+	@Value("${app.security.public-key-path}")
+	private Resource publicKeyResource;
+	
+/*	It is  for reading the private key from the
  * pem file and store as JAVA RSA key
 
 */
 	@Bean
 	public RSAPrivateKey privateKey() throws Exception{
-		return RsaKeyConverters.pkcs8()
-				.convert(
-						new ClassPathResource(
-								"keys/private.pem"
-								).getInputStream()
-						);
+		try(InputStream inputStream = privateKeyResource.getInputStream()){
+			return RsaKeyConverters.pkcs8().convert(inputStream);
+		}
 				
 	}
 	
-/*	It is responsible for reading the public key from the
+/*	It is  for reading the public key from the
 	 * pem file and store as JAVA RSA key
 
 	*/
 	@Bean
 	public RSAPublicKey publicKey() throws Exception{
-		return RsaKeyConverters.x509()
-				.convert(new ClassPathResource(
-						"keys/public.pem"
-						).getInputStream()
-				);
+		try(InputStream inputStream = publicKeyResource.getInputStream()){
+			return RsaKeyConverters.x509().convert(inputStream);
+		}
 	}
 	
 //	this is for encoding the jwt
