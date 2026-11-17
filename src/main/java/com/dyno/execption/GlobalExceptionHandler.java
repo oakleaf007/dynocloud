@@ -1,5 +1,8 @@
 package com.dyno.execption;
 
+import java.time.Instant;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -48,4 +51,22 @@ public class GlobalExceptionHandler {
 				.status(HttpStatus.BAD_REQUEST)
 				.body(ex.getMessage());
 	}
+	
+	@ExceptionHandler(UnsupportedOperationException.class)
+    public ResponseEntity<Map<String, Object>> handleUnsupportedOperation(
+            UnsupportedOperationException ex) {
+
+        Map<String, Object> response = Map.of(
+                "timestamp", Instant.now().toString(),
+                "status", 501,
+                "error", "Not Implemented",
+                "message", ex.getMessage()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_IMPLEMENTED)
+                .body(response);
+    }
+	
+	
 }

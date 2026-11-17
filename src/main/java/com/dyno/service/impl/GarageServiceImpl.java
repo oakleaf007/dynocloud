@@ -1,10 +1,11 @@
 package com.dyno.service.impl;
 
-import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Duration;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import com.dyno.service.StorageService;
@@ -22,6 +23,10 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 @Service
+@ConditionalOnProperty(
+	    name = "storage.provider",
+	    havingValue = "garage"
+	)
 public class GarageServiceImpl implements StorageService {
 	
 
@@ -29,14 +34,14 @@ public class GarageServiceImpl implements StorageService {
 	@Value("${garage.bucket}")
 	private String bucket;
 	
-	private final S3Client s3Client;
-	private final S3Presigner s3Presigner;
+	private final S3Client garageS3Client;
+	private final S3Presigner garageS3Presigner;
 	
 
-	public GarageServiceImpl(S3Client s3Client, S3Presigner s3Presigner) {
+	public GarageServiceImpl( @Qualifier("garageS3Client")S3Client garageS3Client, @Qualifier("garageS3Presigner")S3Presigner garageS3Presigner) {
 		
-		this.s3Client = s3Client;
-		this.s3Presigner = s3Presigner;
+		this.garageS3Client = garageS3Client;
+		this.garageS3Presigner = garageS3Presigner;
 	}
 
 	@Override
@@ -50,7 +55,7 @@ public class GarageServiceImpl implements StorageService {
 								.contentType(contentType)
 								.build();
 		
-		s3Client.putObject(
+		garageS3Client.putObject(
 				request, 
 				RequestBody.fromFile(file)
 				);
@@ -65,7 +70,7 @@ public class GarageServiceImpl implements StorageService {
 	@PostConstruct
 	public void testGarageConnection() {
 
-	    s3Client.headBucket(
+		garageS3Client.headBucket(
 	        HeadBucketRequest.builder()
 	            .bucket("dynocloud-files")
 	            .build()
@@ -94,7 +99,7 @@ public class GarageServiceImpl implements StorageService {
 					.build();
 			
 			PresignedGetObjectRequest presignedRequest =
-					s3Presigner.presignGetObject(presignRequest);
+					garageS3Presigner.presignGetObject(presignRequest);
 			
 	
 
@@ -109,7 +114,7 @@ public class GarageServiceImpl implements StorageService {
 									.bucket(bucket)
 									.key(objectKey)
 									.build();
-		s3Client.getObject(request, ResponseTransformer.toFile(destination));
+		garageS3Client.getObject(request, ResponseTransformer.toFile(destination));
 		
 	}
 	
@@ -120,7 +125,7 @@ public class GarageServiceImpl implements StorageService {
 					.bucket(bucket)
 					.key(objectKey)
 					.build();
-		s3Client.deleteObject(request);
+		garageS3Client.deleteObject(request);
 	}
 
 	

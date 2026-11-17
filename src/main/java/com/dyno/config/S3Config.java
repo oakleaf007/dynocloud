@@ -6,13 +6,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import jakarta.annotation.PostConstruct;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 @Configuration
@@ -31,7 +31,7 @@ public class S3Config {
 	private String secretKey;
 	
 	@Bean
-	public S3Client s3Client() {
+	public S3Client garageS3Client() {
 		AwsBasicCredentials credentials=
 				AwsBasicCredentials.create(
 						accessKey,
@@ -58,7 +58,8 @@ public class S3Config {
 	
 
 	@Bean
-	public S3Presigner s3presigner() {
+	public S3Presigner garageS3Presigner() {
+		System.out.println("========== GARAGE S3 PRESIGNER CREATED ==========");
 		AwsBasicCredentials credentials = 
 				AwsBasicCredentials.create(accessKey, secretKey);
 		
@@ -76,7 +77,10 @@ public class S3Config {
 						.serviceConfiguration(s3Configuration)
 						.build();
 	}	
-	
+	@PostConstruct
+	public void configLoaded() {
+	    System.out.println("========== S3 CONFIG LOADED ==========");
+	}
 }
 
 

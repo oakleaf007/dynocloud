@@ -52,6 +52,10 @@ public class FileServiceImpl implements FileService{
 		this.cleanupRepo = cleanupRepo;
 		this.storageQuotaService = storageQuotaService;
 		this.encryptionService = encryptionService;
+		 System.out.println("==================================");
+		    System.out.println("STORAGE SERVICE INJECTED:");
+		    System.out.println(storageService.getClass().getName());
+		    System.out.println("==================================");
 	}
 
 
@@ -129,7 +133,7 @@ public class FileServiceImpl implements FileService{
 				
 				
 		}
-		catch(IOException | FileEncryptionException ex){
+		catch(Exception ex){
 			
 			
 			        try {
@@ -138,7 +142,11 @@ public class FileServiceImpl implements FileService{
 			        	}
 			           
 			            if(!storageFinalized) {
-			            	 storageQuotaService.releaseQuota(user.getId(), file.getSize());
+			            	 storageQuotaService.releaseUsedQuota(user.getId(), file.getSize());
+			            }else {
+			                storageQuotaService.releaseQuota(
+			                        user.getId(), file.getSize()
+			                    );
 			            }
 			           
 			            
