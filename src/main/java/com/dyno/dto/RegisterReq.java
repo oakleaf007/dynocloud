@@ -17,9 +17,7 @@ public class RegisterReq {
 	@Size(min=8, max= 128)
 	private String password;
 	
-	@NotBlank
-	@Size(min=12, max=500)
-	private String recoveryPhrase;
+
 
 	public String getUsername() {
 		return username;
@@ -45,12 +43,6 @@ public class RegisterReq {
 		this.password = password;
 	}
 
-	public String getRecoveryPhrase() {
-		return recoveryPhrase;
-	}
 
-	public void setRecoveryPhrase(String recoveryPhrase) {
-		this.recoveryPhrase = recoveryPhrase;
-	}
 
 }

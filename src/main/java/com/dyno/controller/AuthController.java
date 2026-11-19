@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.dyno.dto.LoginReq;
 import com.dyno.dto.LoginResponse;
 import com.dyno.dto.RegisterReq;
+import com.dyno.dto.RegisterRes;
 import com.dyno.service.AuthService;
 
 import jakarta.validation.Valid;
@@ -26,11 +27,11 @@ public class AuthController {
 	
 	
 	@PostMapping("/register")
-	public ResponseEntity<String> register(@Valid @RequestBody RegisterReq request){
-		authService.register(request);
+	public ResponseEntity<RegisterRes> register(@Valid @RequestBody RegisterReq request){
+		RegisterRes response = authService.register(request);
 		return ResponseEntity
 				.status(HttpStatus.CREATED)
-				.body("Registration successful");
+				.body(response);
 	}
 	
 	@PostMapping("/login")
