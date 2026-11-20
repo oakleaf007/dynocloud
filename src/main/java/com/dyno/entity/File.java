@@ -62,8 +62,8 @@ public class File {
 	@Column(name="status",nullable=false)
 	private FileStatus status;
 	
-	@Column(name = "encrypted_dek", nullable = false)
-	private byte[] encryptedDek;
+	@Column(name = "encrypted_dek", nullable = false, columnDefinition="text")
+	private String encryptedDek;
 	
 	@Column(name = "file_iv", nullable = false)
 	private byte[] fileIv;
@@ -72,16 +72,16 @@ public class File {
 	private byte[] dekIv;
 	
 	@Column(name = "encryption_version", nullable = false)
-	private Integer encryptionVersion =1 ;
+	private Integer encryptionVersion =2 ;
 	
 	
 	
 	
-	public byte[] getEncryptedDek() {
+	public String getEncryptedDek() {
 		return encryptedDek;
 	}
 
-	public void setEncryptedDek(byte[] encryptedDek) {
+	public void setEncryptedDek(String encryptedDek) {
 		this.encryptedDek = encryptedDek;
 	}
 

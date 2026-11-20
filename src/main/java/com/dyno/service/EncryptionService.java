@@ -11,8 +11,8 @@ public interface EncryptionService {
 	EncryptionResult encrypt(Path source) throws IOException, GeneralSecurityException;
 	void decrypt( Path encryptFile,
 				Path outputFile,
-				byte[] encryptedDek,
-				byte[] fileIv,
-				byte[] dekIv
+				String encryptedDek,
+				byte[] fileIv
+				
 			) throws IOException, GeneralSecurityException;
 }

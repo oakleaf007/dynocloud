@@ -7,18 +7,18 @@ public class EncryptionResult {
 	
 	Path encryptedFile;
 	
-	byte[] encryptedDek;
+	String encryptedDek;
 	
 	byte[] fileIv;
 	
-	byte[] dekIv;
+	
 
-	public EncryptionResult(Path encryptedFile, byte[] encryptedDek, byte[] fileIv, byte[] dekIv) {
+	public EncryptionResult(Path encryptedFile, String encryptedDek, byte[] fileIv) {
 		super();
 		this.encryptedFile = encryptedFile;
 		this.encryptedDek = encryptedDek;
 		this.fileIv = fileIv;
-		this.dekIv = dekIv;
+		
 	}
 
 	public Path getEncryptedFile() {
@@ -29,11 +29,11 @@ public class EncryptionResult {
 		this.encryptedFile = encryptedFile;
 	}
 
-	public byte[] getEncryptedDek() {
+	public String getEncryptedDek() {
 		return encryptedDek;
 	}
 
-	public void setEncryptedDek(byte[] encryptedDek) {
+	public void setEncryptedDek(String encryptedDek) {
 		this.encryptedDek = encryptedDek;
 	}
 
@@ -45,13 +45,7 @@ public class EncryptionResult {
 		this.fileIv = fileIv;
 	}
 
-	public byte[] getDekIv() {
-		return dekIv;
-	}
-
-	public void setDekIv(byte[] dekIv) {
-		this.dekIv = dekIv;
-	}
+	
 
 	
 	

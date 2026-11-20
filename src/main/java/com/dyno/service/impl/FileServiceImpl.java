@@ -107,8 +107,8 @@ public class FileServiceImpl implements FileService{
 				
 				storedFile.setFileIv(encryptionRes.getFileIv());
 				
-				storedFile.setDekIv(encryptionRes.getDekIv());
-				storedFile.setEncryptionVersion(1);
+//				storedFile.setDekIv(encryptionRes.getDekIv());
+				storedFile.setEncryptionVersion(2);
 			}catch(GeneralSecurityException e) {
 				throw new FileEncryptionException(
 						"Failed to encrypt", e
@@ -300,8 +300,7 @@ public class FileServiceImpl implements FileService{
 			encryptionService.decrypt(encryptedTempFile, 
 					decryptedTempFile, 
 					storedFile.getEncryptedDek(), 
-					storedFile.getFileIv(), 
-					storedFile.getDekIv());
+					storedFile.getFileIv());
 			
 			Files.deleteIfExists(encryptedTempFile);
 			

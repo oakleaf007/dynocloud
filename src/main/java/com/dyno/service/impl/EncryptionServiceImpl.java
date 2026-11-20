@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
-import java.util.HexFormat;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -17,9 +16,9 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.stereotype.Service;
 
-import com.dyno.config.EncryptionProperties;
 import com.dyno.dto.EncryptionResult;
 import com.dyno.service.EncryptionService;
+import com.dyno.service.OpenBaoKmsService;
 
 @Service
 public class EncryptionServiceImpl implements EncryptionService {
@@ -28,18 +27,13 @@ public class EncryptionServiceImpl implements EncryptionService {
 	private static final int GCM_TAG_LENGTH = 128;
 	private static final int IV_LENGTH = 12;
 	private final SecureRandom secureRandom = new SecureRandom();
-	private final SecretKey kek;
-	
-	public EncryptionServiceImpl(EncryptionProperties properties) {
-		byte[] keyBytes= hexToByte(properties.getKek());
-		if(keyBytes.length !=32) {
-			throw new IllegalArgumentException(
-					"KEK must be exactly 32 bytes"
-					);
-		}
-		
-		this.kek = new SecretKeySpec(keyBytes, "AES");
+	private final OpenBaoKmsService openBaoKmsService;
+
+	public EncryptionServiceImpl(OpenBaoKmsService openBaoKmsService) {
+	    this.openBaoKmsService = openBaoKmsService;
 	}
+	
+
 	
 	
 	@Override
@@ -49,10 +43,14 @@ public class EncryptionServiceImpl implements EncryptionService {
 		
 		byte[] fileIv = generateIv();
 		
-		byte[] dekIv = generateIv();
+	
 		
-		byte[] encryptedDek = encryptDek(dek, dekIv);
-		
+		String encryptedDek = openBaoKmsService.encryptDek(dek.getEncoded());
+		if (encryptedDek == null || encryptedDek.isBlank()) {
+		    throw new GeneralSecurityException(
+		        "OpenBao returned an empty encrypted DEK"
+		    );
+		}
 		Path encryptedFile = Files.createTempFile("dynocloud-", ".enc");
 		
 		encryptFile(source, encryptedFile, dek, fileIv);
@@ -60,8 +58,7 @@ public class EncryptionServiceImpl implements EncryptionService {
 		return new EncryptionResult(
 				encryptedFile,
 				encryptedDek,
-				fileIv,
-				dekIv);
+				fileIv);
 		
 		
 		
@@ -85,13 +82,13 @@ public class EncryptionServiceImpl implements EncryptionService {
 	}
 	
 	
-	private byte[] encryptDek(SecretKey dek, byte[] iv) throws GeneralSecurityException{
-		Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-		GCMParameterSpec gcmSpec = new GCMParameterSpec(
-				GCM_TAG_LENGTH, iv);
-		cipher.init(Cipher.ENCRYPT_MODE, kek, gcmSpec);
-		return cipher.doFinal(dek.getEncoded());
-	}
+//	private byte[] encryptDek(SecretKey dek, byte[] iv) throws GeneralSecurityException{
+//		Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+//		GCMParameterSpec gcmSpec = new GCMParameterSpec(
+//				GCM_TAG_LENGTH, iv);
+//		cipher.init(Cipher.ENCRYPT_MODE, kek, gcmSpec);
+//		return cipher.doFinal(dek.getEncoded());
+//	}
 	
 	private void encryptFile(Path source, Path destination, SecretKey dek, byte[] iv) throws IOException, GeneralSecurityException {
 			Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
@@ -138,31 +135,32 @@ public class EncryptionServiceImpl implements EncryptionService {
 
 
 	@Override
-	public void decrypt(Path encryptFile, Path outputFile, byte[] encryptedDek, byte[] fileIv, byte[] dekIv)
+	public void decrypt(Path encryptFile, Path outputFile, String encryptedDek, byte[] fileIv)
 			throws IOException, GeneralSecurityException {
 		// TODO Auto-generated method stub
-		
-		SecretKey dek = decryptDek(encryptedDek, dekIv);
+		byte[] dekBytes =
+	            openBaoKmsService.decryptDek(encryptedDek);
+		SecretKey dek = new SecretKeySpec(dekBytes, "AES");
 		
 		decryptFile(encryptFile, outputFile, dek, fileIv);
 		
 	}
 	
-	private SecretKey decryptDek(
-			byte[] encryptedDek, byte[] dekIv
-			) throws GeneralSecurityException{
-		
-Cipher cipher= Cipher.getInstance("AES/GCM/NoPadding");
-		
-		GCMParameterSpec spec = new GCMParameterSpec(
-					GCM_TAG_LENGTH, dekIv
-				);
-		cipher.init(Cipher.DECRYPT_MODE, kek, spec);
-		
-		byte[] dekBytes = cipher.doFinal(encryptedDek);
-		return new SecretKeySpec(dekBytes, "AES");
-	}
-	
+//	private SecretKey decryptDek(
+//			byte[] encryptedDek, byte[] dekIv
+//			) throws GeneralSecurityException{
+//		
+//Cipher cipher= Cipher.getInstance("AES/GCM/NoPadding");
+//		
+//		GCMParameterSpec spec = new GCMParameterSpec(
+//					GCM_TAG_LENGTH, dekIv
+//				);
+//		cipher.init(Cipher.DECRYPT_MODE, kek, spec);
+//		
+//		byte[] dekBytes = cipher.doFinal(encryptedDek);
+//		return new SecretKeySpec(dekBytes, "AES");
+//	}
+//	
 	private void decryptFile(
 			Path encryptedFile, Path outputFile,
 			SecretKey dek, byte[] fileIv
