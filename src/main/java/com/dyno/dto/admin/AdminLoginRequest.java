@@ -1,4 +1,4 @@
-package com.dyno.dto;
+package com.dyno.dto.admin;
 
 import jakarta.validation.constraints.NotBlank;
 

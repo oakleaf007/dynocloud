@@ -1,4 +1,4 @@
-package com.dyno.dto;
+package com.dyno.dto.admin;
 
 
 public record AdminLoginResponse(

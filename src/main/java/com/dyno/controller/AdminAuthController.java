@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.dyno.dto.AdminLoginRequest;
-import com.dyno.dto.AdminLoginResponse;
+import com.dyno.dto.admin.AdminLoginRequest;
+import com.dyno.dto.admin.AdminLoginResponse;
 import com.dyno.service.AdminAuthService;
 
 @RestController

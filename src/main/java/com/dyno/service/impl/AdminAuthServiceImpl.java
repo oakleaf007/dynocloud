@@ -9,8 +9,8 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
-import com.dyno.dto.AdminLoginRequest;
-import com.dyno.dto.AdminLoginResponse;
+import com.dyno.dto.admin.AdminLoginRequest;
+import com.dyno.dto.admin.AdminLoginResponse;
 import com.dyno.entity.Admin;
 import com.dyno.repository.AdminRepository;
 import com.dyno.service.AdminAuthService;

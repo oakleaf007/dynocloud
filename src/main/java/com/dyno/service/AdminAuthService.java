@@ -1,7 +1,7 @@
 package com.dyno.service;
 
-import com.dyno.dto.AdminLoginRequest;
-import com.dyno.dto.AdminLoginResponse;
+import com.dyno.dto.admin.AdminLoginRequest;
+import com.dyno.dto.admin.AdminLoginResponse;
 
 public interface AdminAuthService {
 
