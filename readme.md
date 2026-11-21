@@ -15,8 +15,8 @@ It provides secure user authentication, file management, object storage integrat
 - Storage quota management.
 - Presigned URLs for secure file downloads.
 - AES-256-GCM envelope encryption.
-- Self-hosted key management using OpenBao (in progress).
-- Recovery-phrase-based password recovery (in progress).
+- Self-hosted key management using OpenBao.
+- Recovery-phrase-based password recovery.
 
 ## Tech Stack
 
@@ -25,7 +25,7 @@ It provides secure user authentication, file management, object storage integrat
 - **Security:** Spring Security, JWT
 - **Database:** PostgreSQL
 - **ORM:** Spring Data JPA / Hibernate
-- **Storage:** Garage, Amazon S3 (can be switchable but Amazon s3 business logic not implemented)
+- **Storage:** Garage, Amazon S3 (can be switchable but Amazon s3 service logic not implemented)
 - **Encryption:** AES-256-GCM
 - **Key Management:** OpenBao
 - **Build Tool:** Gradle
