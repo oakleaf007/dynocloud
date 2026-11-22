@@ -17,5 +17,6 @@ public interface StorageService {
 	
 	void delete(String objectKey);
 	
+	InputStream downloadStream(String objectKey);
 
 }

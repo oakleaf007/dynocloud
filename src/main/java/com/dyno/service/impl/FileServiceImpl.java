@@ -1,6 +1,8 @@
 package com.dyno.service.impl;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
@@ -17,6 +19,7 @@ import com.dyno.cleanup.StorageCleanup;
 import com.dyno.cleanup.StorageCleanupRepo;
 import com.dyno.dto.DecryptedFile;
 import com.dyno.dto.EncryptionResult;
+import com.dyno.dto.FileDownloadInfo;
 import com.dyno.dto.FileResponse;
 import com.dyno.entity.File;
 import com.dyno.entity.FileStatus;
@@ -99,7 +102,7 @@ public class FileServiceImpl implements FileService{
 			file.transferTo(tempFile);
 			try {
 				EncryptionResult encryptionRes =
-						encryptionService.encrypt(tempFile);
+						encryptionService.encrypt(tempFile, fileId);
 				
 				encryptedTempFile = encryptionRes.getEncryptedFile();
 				
@@ -170,6 +173,9 @@ public class FileServiceImpl implements FileService{
 		}
 		finally {
 			Files.deleteIfExists(tempFile);
+			 if (encryptedTempFile != null) {
+			        Files.deleteIfExists(encryptedTempFile);
+			    }
 			
 		}
 	
@@ -197,28 +203,28 @@ public class FileServiceImpl implements FileService{
 	}
 
 
-	@Override
-	public String generateDownloadUrl(String username, UUID fileId) {
-		// TODO Auto-generated method stub
-		
-		User user = userRepository.findByUsername(username)
-					.orElseThrow(()->
-						new ResourceNotFoundException("User not found")
-							);
-		
-		File file = fileRepository.findById(fileId)
-					.orElseThrow(()->
-						new ResourceNotFoundException("File not found")
-							);
-		
-		if(!file.getOwner().getId().equals(user.getId())) {
-			throw new ResourceNotFoundException("File not found");
-			
-		}
-		
-		return storageService.generateDownloadUrl(file.getObjectKey(), file.getContentType());
-				
-	}
+//	@Override
+//	public String generateDownloadUrl(String username, UUID fileId) {
+//		// TODO Auto-generated method stub
+//		
+//		User user = userRepository.findByUsername(username)
+//					.orElseThrow(()->
+//						new ResourceNotFoundException("User not found")
+//							);
+//		
+//		File file = fileRepository.findById(fileId)
+//					.orElseThrow(()->
+//						new ResourceNotFoundException("File not found")
+//							);
+//		
+//		if(!file.getOwner().getId().equals(user.getId())) {
+//			throw new ResourceNotFoundException("File not found");
+//			
+//		}
+//		
+//		return storageService.generateDownloadUrl(file.getObjectKey(), file.getContentType());
+//				
+//	}
 
 
 	@Override
@@ -280,51 +286,135 @@ public class FileServiceImpl implements FileService{
 	}
 
 
-	@Override
-	public DecryptedFile download(UUID fileId, User user) throws IOException {
-		// TODO Auto-generated method stub
-		File storedFile = fileRepository.findById(fileId)
-						.orElseThrow(
-								()->new ResourceNotFoundException("File not found")
-								);
-		if(!storedFile.getOwner().getId().equals(user.getId())) {
-			throw new InvalidCredentialException(" You dont have access to this file");
-		}
-		
-		Path encryptedTempFile = Files.createTempFile("dynocloud-download-", ".enc");
-		Files.deleteIfExists(encryptedTempFile);
-		Path decryptedTempFile = Files.createTempFile("dynocloud-download-",".dec");
-		
-		try {
-			storageService.download(storedFile.getObjectKey(), encryptedTempFile);
-			encryptionService.decrypt(encryptedTempFile, 
-					decryptedTempFile, 
-					storedFile.getEncryptedDek(), 
-					storedFile.getFileIv());
-			
-			Files.deleteIfExists(encryptedTempFile);
-			
-			return new DecryptedFile(decryptedTempFile,
-					storedFile.getOriginalName(),
-					storedFile.getContentType(),
-					Files.size(decryptedTempFile)
-					);
-					
-		}catch(GeneralSecurityException ex) {
-			
-			Files.deleteIfExists(decryptedTempFile);
-			
-			
-			throw new FileEncryptionException(" Failed to decrypt", ex);
-			
-		}
-		catch(IOException ex) {
-			Files.deleteIfExists(decryptedTempFile);
-			throw ex;
-		}finally {
-			Files.deleteIfExists(encryptedTempFile);
-		}
-	}
+//not required or using but works
+@Override
+public DecryptedFile download(UUID fileId, User user) throws IOException {
+
+    File storedFile = fileRepository.findById(fileId)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException("File not found")
+            );
+
+    if (!storedFile.getOwner().getId().equals(user.getId())) {
+        throw new ResourceNotFoundException("File not found");
+    }
+
+    if (storedFile.getStatus() != FileStatus.AVAILABLE) {
+        throw new ResourceNotFoundException("File not available");
+    }
+
+    Path decryptedTempFile = Files.createTempFile(
+            "dynocloud-download-", ".dec"
+    );
+
+    boolean completed = false;
+
+    try (
+        InputStream encryptedInput =
+                storageService.downloadStream(storedFile.getObjectKey());
+
+        var plaintextOutput =
+                Files.newOutputStream(decryptedTempFile)
+    ) {
+
+        encryptionService.decrypt(
+                encryptedInput,
+                plaintextOutput,
+                storedFile.getEncryptedDek(),
+                storedFile.getFileIv(),
+                storedFile.getId(),
+                storedFile.getSizeBytes()
+        );
+
+        completed = true;
+
+        return new DecryptedFile(
+                decryptedTempFile,
+                storedFile.getOriginalName(),
+                storedFile.getContentType(),
+                Files.size(decryptedTempFile)
+        );
+
+    } catch (GeneralSecurityException ex) {
+
+        throw new FileEncryptionException(
+                "Failed to authenticate or decrypt file", ex
+        );
+
+    } finally {
+
+        if (!completed) {
+            Files.deleteIfExists(decryptedTempFile);
+        }
+    }
+}
+
+
+@Override
+public FileDownloadInfo prepareStreamingDownload(UUID fileId, User user) {
+
+    File storedFile = fileRepository.findById(fileId)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException("File not found"));
+
+    if (!storedFile.getOwner().getId().equals(user.getId())) {
+        throw new ResourceNotFoundException("File not found");
+    }
+
+    if (storedFile.getStatus() != FileStatus.AVAILABLE) {
+        throw new ResourceNotFoundException("File not available");
+    }
+
+    if (storedFile.getEncryptionVersion() == null
+            || storedFile.getEncryptionVersion() != 2) {
+        throw new FileEncryptionException(
+                "Unsupported encryption version", null);
+    }
+
+    return new FileDownloadInfo(
+            storedFile.getId(),
+            storedFile.getObjectKey(),
+            storedFile.getOriginalName(),
+            storedFile.getContentType(),
+            storedFile.getSizeBytes(),
+            storedFile.getEncryptedDek(),
+            storedFile.getFileIv()
+    );
+}
+
+// used for both downloading and streaming
+@Override
+public void streamDownload(
+        FileDownloadInfo info,
+        OutputStream output) throws IOException {
+
+    try (InputStream encryptedInput =
+                 storageService.downloadStream(info.getObjectKey())) {
+
+        encryptionService.decrypt(
+                encryptedInput,
+                output,
+                info.getEncryptedDek(),
+                info.getFileIv(),
+                info.getFileId(),
+                info.getSize()
+        );
+
+    } catch (GeneralSecurityException ex) {
+
+        throw new FileEncryptionException(
+                "Failed to authenticate or decrypt streamed file",
+                ex
+        );
+    }
+}
+
+
+
+	
+
+
+
 	
 	
 

@@ -1,5 +1,6 @@
 package com.dyno.service.impl;
 
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Duration;
 
@@ -126,6 +127,16 @@ public class GarageServiceImpl implements StorageService {
 					.key(objectKey)
 					.build();
 		garageS3Client.deleteObject(request);
+	}
+
+	@Override
+	public InputStream downloadStream(String objectKey) {
+		  GetObjectRequest request = GetObjectRequest.builder()
+		            .bucket(bucket)
+		            .key(objectKey)
+		            .build();
+
+		    return garageS3Client.getObject(request);
 	}
 
 	

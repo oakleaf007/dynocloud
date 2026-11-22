@@ -1,5 +1,6 @@
 package com.dyno.service.impl;
 
+import java.io.InputStream;
 import java.nio.file.Path;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -49,6 +50,11 @@ public class AwsS3StorageImpl implements StorageService{
 		throw new UnsupportedOperationException(
 		        "AWS S3  is not implemented yet");
 		
+	}
+	@Override
+	public InputStream downloadStream(String objectKey) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

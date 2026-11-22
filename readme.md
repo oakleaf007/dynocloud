@@ -17,6 +17,7 @@ It provides secure user authentication, file management, object storage integrat
 - AES-256-GCM envelope encryption.
 - Self-hosted key management using OpenBao.
 - Recovery-phrase-based password recovery.
+- Admin panel for storage overview.
 
 ## Tech Stack
 

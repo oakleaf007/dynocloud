@@ -74,7 +74,8 @@ public class File {
 	@Column(name = "encryption_version", nullable = false)
 	private Integer encryptionVersion =2 ;
 	
-	
+	@Column(name = "chunk_size")
+	private Integer chunkSize;
 	
 	
 	public String getEncryptedDek() {
@@ -100,6 +101,8 @@ public class File {
 	public void setDekIv(byte[] dekIv) {
 		this.dekIv = dekIv;
 	}
+	
+	
 
 	public Integer getEncryptionVersion() {
 		return encryptionVersion;
@@ -194,6 +197,16 @@ public class File {
 	public void setOwner(User owner) {
 		this.owner = owner;
 	}
+
+	public Integer getChunkSize() {
+		return chunkSize;
+	}
+
+	public void setChunkSize(Integer chunkSize) {
+		this.chunkSize = chunkSize;
+	}
+	
+	
 	
 	
 }

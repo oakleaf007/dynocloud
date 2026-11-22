@@ -1,55 +1,47 @@
+
 package com.dyno.dto;
 
 import java.nio.file.Path;
 
 public class EncryptionResult {
 
-	
-	Path encryptedFile;
-	
-	String encryptedDek;
-	
-	byte[] fileIv;
-	
-	
+    private Path encryptedFile;
 
-	public EncryptionResult(Path encryptedFile, String encryptedDek, byte[] fileIv) {
-		super();
-		this.encryptedFile = encryptedFile;
-		this.encryptedDek = encryptedDek;
-		this.fileIv = fileIv;
-		
-	}
+    private String encryptedDek;
 
-	public Path getEncryptedFile() {
-		return encryptedFile;
-	}
+    private byte[] fileIv;
 
-	public void setEncryptedFile(Path encryptedFile) {
-		this.encryptedFile = encryptedFile;
-	}
+    public EncryptionResult(
+            Path encryptedFile,
+            String encryptedDek,
+            byte[] fileIv
+    ) {
+        this.encryptedFile = encryptedFile;
+        this.encryptedDek = encryptedDek;
+        this.fileIv = fileIv.clone();
+    }
 
-	public String getEncryptedDek() {
-		return encryptedDek;
-	}
+    public Path getEncryptedFile() {
+        return encryptedFile;
+    }
 
-	public void setEncryptedDek(String encryptedDek) {
-		this.encryptedDek = encryptedDek;
-	}
+    public void setEncryptedFile(Path encryptedFile) {
+        this.encryptedFile = encryptedFile;
+    }
 
-	public byte[] getFileIv() {
-		return fileIv;
-	}
+    public String getEncryptedDek() {
+        return encryptedDek;
+    }
 
-	public void setFileIv(byte[] fileIv) {
-		this.fileIv = fileIv;
-	}
+    public void setEncryptedDek(String encryptedDek) {
+        this.encryptedDek = encryptedDek;
+    }
 
-	
+    public byte[] getFileIv() {
+        return fileIv.clone();
+    }
 
-	
-	
-	
-	
-	
+    public void setFileIv(byte[] fileIv) {
+        this.fileIv = fileIv.clone();
+    }
 }

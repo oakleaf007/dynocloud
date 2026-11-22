@@ -1,5 +1,11 @@
+
 package com.dyno.service.impl;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -7,6 +13,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
+import java.util.Arrays;
+import java.util.UUID;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -19,181 +27,443 @@ import org.springframework.stereotype.Service;
 import com.dyno.dto.EncryptionResult;
 import com.dyno.service.EncryptionService;
 import com.dyno.service.OpenBaoKmsService;
+import com.dyno.streaming.format.ChunkedFileFormat;
+import com.dyno.streaming.format.ChunkedFileFormat.Header;
 
 @Service
 public class EncryptionServiceImpl implements EncryptionService {
-	
-	private static final int AES_KEY_SIZE =256;
-	private static final int GCM_TAG_LENGTH = 128;
-	private static final int IV_LENGTH = 12;
-	private final SecureRandom secureRandom = new SecureRandom();
-	private final OpenBaoKmsService openBaoKmsService;
 
-	public EncryptionServiceImpl(OpenBaoKmsService openBaoKmsService) {
-	    this.openBaoKmsService = openBaoKmsService;
-	}
-	
+    private static final int AES_KEY_SIZE = 256;
+    private static final int GCM_TAG_LENGTH = 128;
 
-	
-	
-	@Override
-	public EncryptionResult encrypt(Path source) throws IOException, GeneralSecurityException{
-		// TODO Auto-generated method stub
-		SecretKey dek = generateDek();
-		
-		byte[] fileIv = generateIv();
-		
-	
-		
-		String encryptedDek = openBaoKmsService.encryptDek(dek.getEncoded());
-		if (encryptedDek == null || encryptedDek.isBlank()) {
-		    throw new GeneralSecurityException(
-		        "OpenBao returned an empty encrypted DEK"
-		    );
-		}
-		Path encryptedFile = Files.createTempFile("dynocloud-", ".enc");
-		
-		encryptFile(source, encryptedFile, dek, fileIv);
-		
-		return new EncryptionResult(
-				encryptedFile,
-				encryptedDek,
-				fileIv);
-		
-		
-		
-		
+    private final SecureRandom secureRandom = new SecureRandom();
 
-	}
-	private byte[] generateIv() {
-		byte[] iv = new byte[IV_LENGTH];
-		
-		secureRandom.nextBytes(iv);
-		
-		return iv;
-	}
-	private SecretKey generateDek() throws GeneralSecurityException {
-		KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-		
-		keyGen.init(AES_KEY_SIZE);
-		
-		return keyGen.generateKey();
-	
-	}
-	
-	
-//	private byte[] encryptDek(SecretKey dek, byte[] iv) throws GeneralSecurityException{
-//		Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-//		GCMParameterSpec gcmSpec = new GCMParameterSpec(
-//				GCM_TAG_LENGTH, iv);
-//		cipher.init(Cipher.ENCRYPT_MODE, kek, gcmSpec);
-//		return cipher.doFinal(dek.getEncoded());
-//	}
-	
-	private void encryptFile(Path source, Path destination, SecretKey dek, byte[] iv) throws IOException, GeneralSecurityException {
-			Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-			GCMParameterSpec gcmSpec =new GCMParameterSpec(
-						GCM_TAG_LENGTH, iv
-						);
-			cipher.init(cipher.ENCRYPT_MODE,dek, gcmSpec);
-			
-			try(
-				InputStream input = Files.newInputStream(source);
-					OutputStream output = Files.newOutputStream(destination)
-				){
-				byte[] buffer = new byte[8192];
-				int bytesRead;
-				
-				while((bytesRead = input.read(buffer)) != -1) {
-					byte[] encrypted = cipher.update(buffer,
-							0, bytesRead
-							);
-					if(encrypted !=null) {
-						output.write(encrypted);
-					}
-				}
-				byte[] finalBytes = cipher.doFinal();
-				output.write(finalBytes);
-				
-			}
-	}
-	
-	private byte[] hexToByte(String hex) {
-		if(hex == null || hex.length() % 2 !=0) {
-			throw new IllegalArgumentException("Invalid KEK");
-		}
-		byte[] bytes = new byte[hex.length()/2];
-		
-		for(int i =0; i<hex.length(); i += 2) {
-			bytes[i/2] = (byte) Integer.parseInt(hex.substring(i, i+2),16);
-		}
-		
-		return bytes;
-	}
-	
+    private final OpenBaoKmsService openBaoKmsService;
+
+    public EncryptionServiceImpl(
+            OpenBaoKmsService openBaoKmsService) {
+
+        this.openBaoKmsService = openBaoKmsService;
+    }
+
+  
+    @Override
+    public EncryptionResult encrypt(
+            Path source,
+            UUID fileId
+    ) throws IOException, GeneralSecurityException {
+
+        if (fileId == null) {
+            throw new IllegalArgumentException(
+                    "File ID cannot be null"
+            );
+        }
+
+        if (!Files.isRegularFile(source)) {
+            throw new IOException("Invalid source file");
+        }
+
+        long originalFileSize = Files.size(source);
+
+        // Generate a fresh DEK for this file.
+        SecretKey dek = generateDek();
+
+        // Generate a random 8-byte nonce prefix.
+        byte[] noncePrefix = new byte[
+                ChunkedFileFormat.NONCE_PREFIX_LENGTH
+        ];
+
+        secureRandom.nextBytes(noncePrefix);
+
+        // Wrap the DEK using OpenBao.
+        byte[] dekBytes = dek.getEncoded();
+
+        String encryptedDek;
+
+        try {
+            encryptedDek = openBaoKmsService.encryptDek(dekBytes);
+        } finally {
+            Arrays.fill(dekBytes, (byte) 0);
+        }
+
+        if (encryptedDek == null || encryptedDek.isBlank()) {
+            throw new GeneralSecurityException(
+                    "OpenBao returned an empty encrypted DEK"
+            );
+        }
+
+        Header header = ChunkedFileFormat.createHeader(
+                noncePrefix,
+                originalFileSize
+        );
+
+        Path encryptedFile = Files.createTempFile(
+                "dynocloud-", ".enc"
+        );
+
+        boolean completed = false;
+
+        try {
+            encryptFile(
+                    source,
+                    encryptedFile,
+                    dek,
+                    fileId,
+                    header
+            );
+
+            completed = true;
+
+            return new EncryptionResult(
+                    encryptedFile,
+                    encryptedDek,
+                    noncePrefix
+            );
+
+        } finally {
+
+            if (!completed) {
+                Files.deleteIfExists(encryptedFile);
+            }
+        }
+    }
+
+    private SecretKey generateDek()
+            throws GeneralSecurityException {
+
+        KeyGenerator keyGenerator =
+                KeyGenerator.getInstance("AES");
+
+        keyGenerator.init(AES_KEY_SIZE, secureRandom);
+
+        return keyGenerator.generateKey();
+    }
+
+    private void encryptFile(
+            Path source,
+            Path destination,
+            SecretKey dek,
+            UUID fileId,
+            Header header
+    ) throws IOException, GeneralSecurityException {
+    	
+        try (
+            InputStream input = new BufferedInputStream(
+                    Files.newInputStream(source)
+            );
+
+            DataOutputStream output = new DataOutputStream(
+                    new BufferedOutputStream(
+                            Files.newOutputStream(destination)
+                    )
+            )
+        ) {
+
+            // Write binary file header.
+            ChunkedFileFormat.writeHeader(output, header);
+
+            long originalFileSize = header.originalFileSize();
+
+            long chunkCount =
+                    ChunkedFileFormat.getChunkCount(originalFileSize);
+
+            byte[] buffer = new byte[
+                    ChunkedFileFormat.CHUNK_SIZE
+            ];
+
+            for (long chunkIndex = 0;
+                    chunkIndex < chunkCount;
+                    chunkIndex++) {
+
+                int plaintextLength =
+                        ChunkedFileFormat.getPlaintextChunkLength(
+                                originalFileSize,
+                                chunkIndex
+                        );
+
+                readExactly(
+                        input,
+                        buffer,
+                        plaintextLength
+                );
+
+                byte[] iv = ChunkedFileFormat.deriveIv(
+                        header.noncePrefix(),
+                        chunkIndex
+                );
+
+                byte[] aad = ChunkedFileFormat.buildAad(
+                        header,
+                        fileId,
+                        chunkIndex,
+                        plaintextLength
+                );
+
+                Cipher cipher = Cipher.getInstance(
+                        "AES/GCM/NoPadding"
+                );
+
+                GCMParameterSpec spec = new GCMParameterSpec(
+                        GCM_TAG_LENGTH,
+                        iv
+                );
+
+                cipher.init(
+                        Cipher.ENCRYPT_MODE,
+                        dek,
+                        spec
+                );
+
+                cipher.updateAAD(aad);
+
+                // Output contains ciphertext + 16-byte GCM tag.
+                byte[] encryptedChunk = cipher.doFinal(
+                        buffer,
+                        0,
+                        plaintextLength
+                );
+
+                output.write(encryptedChunk);
+
+                Arrays.fill(encryptedChunk, (byte) 0);
+            }
+
+            // Detect a source file that changed during encryption.
+            if (input.read() != -1) {
+                throw new IOException(
+                        "Source file changed during encryption"
+                );
+            }
+
+            output.flush();
+        }
+    }
 
 
+    @Override
+    public void decrypt(
+            InputStream encryptedInput,
+            OutputStream plaintextOutput,
+            String encryptedDek,
+            byte[] fileIv,
+            UUID fileId,
+            long originalFileSize
+    ) throws IOException, GeneralSecurityException {
 
-	@Override
-	public void decrypt(Path encryptFile, Path outputFile, String encryptedDek, byte[] fileIv)
-			throws IOException, GeneralSecurityException {
-		// TODO Auto-generated method stub
-		byte[] dekBytes =
-	            openBaoKmsService.decryptDek(encryptedDek);
-		SecretKey dek = new SecretKeySpec(dekBytes, "AES");
-		
-		decryptFile(encryptFile, outputFile, dek, fileIv);
-		
-	}
-	
-//	private SecretKey decryptDek(
-//			byte[] encryptedDek, byte[] dekIv
-//			) throws GeneralSecurityException{
-//		
-//Cipher cipher= Cipher.getInstance("AES/GCM/NoPadding");
-//		
-//		GCMParameterSpec spec = new GCMParameterSpec(
-//					GCM_TAG_LENGTH, dekIv
-//				);
-//		cipher.init(Cipher.DECRYPT_MODE, kek, spec);
-//		
-//		byte[] dekBytes = cipher.doFinal(encryptedDek);
-//		return new SecretKeySpec(dekBytes, "AES");
-//	}
-//	
-	private void decryptFile(
-			Path encryptedFile, Path outputFile,
-			SecretKey dek, byte[] fileIv
-			) throws IOException, GeneralSecurityException{
-          Cipher cipher= Cipher.getInstance("AES/GCM/NoPadding");
-		
-		GCMParameterSpec spec = new GCMParameterSpec(
-					GCM_TAG_LENGTH, fileIv
-				);
-		cipher.init(Cipher.DECRYPT_MODE, dek, spec);
-		
-		try(
-				InputStream input = Files.newInputStream(encryptedFile);
-				OutputStream output = Files.newOutputStream(outputFile)
-				){
-			byte[] buffer = new byte[8192];
-			
-			int bytesRead;
-			
-			while((bytesRead = input.read(buffer))!=-1) {
-				
-				byte[] decrypted = cipher.update(buffer, 0, bytesRead);
-				
-				if(decrypted != null) {
-					output.write(decrypted);
-				}
-			}
-			byte[] finalBytes = cipher.doFinal();
-			
-			output.write(finalBytes);
-			
-			
-		}
-	}
+        if (encryptedInput == null ||
+                plaintextOutput == null ||
+                fileId == null) {
 
+            throw new IllegalArgumentException(
+                    "Invalid decryption arguments"
+            );
+        }
+
+        if (fileIv == null ||
+                fileIv.length !=
+                        ChunkedFileFormat.NONCE_PREFIX_LENGTH) {
+
+            throw new GeneralSecurityException(
+                    "Invalid file nonce prefix"
+            );
+        }
+
+        if (originalFileSize < 0) {
+            throw new GeneralSecurityException(
+                    "Invalid original file size"
+            );
+        }
+
+        // Unwrap DEK using OpenBao.
+        byte[] dekBytes =
+                openBaoKmsService.decryptDek(encryptedDek);
+
+        if (dekBytes == null || dekBytes.length != 32) {
+            if (dekBytes != null) {
+                Arrays.fill(dekBytes, (byte) 0);
+            }
+
+            throw new GeneralSecurityException(
+                    "Invalid AES-256 DEK"
+            );
+        }
+
+        SecretKey dek = new SecretKeySpec(dekBytes, "AES");
+
+        try {
+            decryptChunks(
+                    encryptedInput,
+                    plaintextOutput,
+                    dek,
+                    fileIv,
+                    fileId,
+                    originalFileSize
+            );
+
+        } finally {
+            Arrays.fill(dekBytes, (byte) 0);
+        }
+    }
+
+    private void decryptChunks(
+            InputStream encryptedInput,
+            OutputStream plaintextOutput,
+            SecretKey dek,
+            byte[] expectedNoncePrefix,
+            UUID fileId,
+            long expectedFileSize
+    ) throws IOException, GeneralSecurityException {
+    	long totalDecryptedBytes = 0;
+        DataInputStream input = new DataInputStream(
+                new BufferedInputStream(encryptedInput)
+        );
+
+        // Read and validate header.
+        Header header = ChunkedFileFormat.readHeader(input);
+
+        if (header.originalFileSize() != expectedFileSize) {
+            throw new GeneralSecurityException(
+                    "Encrypted file size does not match metadata"
+            );
+        }
+
+        if (!Arrays.equals(
+                header.noncePrefix(),
+                expectedNoncePrefix
+        )) {
+            throw new GeneralSecurityException(
+                    "File nonce prefix mismatch"
+            );
+        }
+
+        long chunkCount =
+                ChunkedFileFormat.getChunkCount(expectedFileSize);
+
+        for (long chunkIndex = 0;
+                chunkIndex < chunkCount;
+                chunkIndex++) {
+
+            int plaintextLength =
+                    ChunkedFileFormat.getPlaintextChunkLength(
+                            expectedFileSize,
+                            chunkIndex
+                    );
+
+            int encryptedLength =
+                    ChunkedFileFormat.getEncryptedChunkLength(
+                            expectedFileSize,
+                            chunkIndex
+                    );
+
+            byte[] encryptedChunk =
+                    new byte[encryptedLength];
+
+            // Read exactly one encrypted chunk.
+            input.readFully(encryptedChunk);
+
+            byte[] iv = ChunkedFileFormat.deriveIv(
+                    header.noncePrefix(),
+                    chunkIndex
+            );
+
+            byte[] aad = ChunkedFileFormat.buildAad(
+                    header,
+                    fileId,
+                    chunkIndex,
+                    plaintextLength
+            );
+
+            Cipher cipher = Cipher.getInstance(
+                    "AES/GCM/NoPadding"
+            );
+
+            GCMParameterSpec spec = new GCMParameterSpec(
+                    GCM_TAG_LENGTH,
+                    iv
+            );
+
+            cipher.init(
+                    Cipher.DECRYPT_MODE,
+                    dek,
+                    spec
+            );
+
+            cipher.updateAAD(aad);
+
+            byte[] plaintextChunk;
+
+            try {
+                // Authentication is verified here.
+                plaintextChunk = cipher.doFinal(encryptedChunk);
+
+            } finally {
+                Arrays.fill(encryptedChunk, (byte) 0);
+            }
+
+            if (plaintextChunk.length != plaintextLength) {
+                Arrays.fill(plaintextChunk, (byte) 0);
+
+                throw new GeneralSecurityException(
+                        "Invalid decrypted chunk length"
+                );
+            }
+
+            // Write only after authentication succeeds.
+            try {
+                plaintextOutput.write(plaintextChunk);
+                plaintextOutput.flush();
+                
+                totalDecryptedBytes += plaintextChunk.length;
+            } finally {
+                Arrays.fill(plaintextChunk, (byte) 0);
+            }
+        }
+        if (totalDecryptedBytes != expectedFileSize) {
+            throw new IOException(
+                "Decrypted size mismatch. Expected: "
+                + expectedFileSize
+                + ", Actual: "
+                + totalDecryptedBytes
+            );
+        }
+        // Reject unexpected trailing bytes.
+        if (input.read() != -1) {
+            throw new IOException(
+                    "Unexpected trailing data in encrypted file"
+            );
+        }
+
+        plaintextOutput.flush();
+    }
+
+
+    private void readExactly(
+            InputStream input,
+            byte[] buffer,
+            int length
+    ) throws IOException {
+
+        int totalRead = 0;
+
+        while (totalRead < length) {
+
+            int bytesRead = input.read(
+                    buffer,
+                    totalRead,
+                    length - totalRead
+            );
+
+            if (bytesRead == -1) {
+                throw new EOFException(
+                        "Source file ended unexpectedly"
+                );
+            }
+
+            if (bytesRead == 0) {
+                continue;
+            }
+
+            totalRead += bytesRead;
+        }
+    }
 }
