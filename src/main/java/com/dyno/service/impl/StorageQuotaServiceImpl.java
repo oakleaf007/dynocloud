@@ -51,6 +51,7 @@ public class StorageQuotaServiceImpl implements StorageQuotaService{
 
 
 	@Override
+	@Transactional
 	public void finalizeQuota(UUID userId, long fileSize) {
 		// TODO Auto-generated method stub
 	Storage storage = storageRepo.findByUserId(userId)
@@ -85,12 +86,23 @@ public class StorageQuotaServiceImpl implements StorageQuotaService{
 
 
 	@Override
+	@Transactional
 	public void releaseUsedQuota(UUID userId, long fileSize) {
 		// TODO Auto-generated method stub
 		Storage storage = storageRepo.findByUserId(userId)
 				.orElseThrow(()->
 					new RuntimeException("Storage account not found")
 						);
+		
+		   long usedBytes = storage.getUsedBytes();
+		   if (fileSize <= 0) {
+		        throw new IllegalArgumentException("File size must be positive");
+		    }
+		   if (fileSize > usedBytes) {
+		        throw new IllegalStateException(
+		            "Cannot release more quota than currently used"
+		        );
+		    }
 		storage.setUsedBytes(storage.getUsedBytes() - fileSize);
 	}
 

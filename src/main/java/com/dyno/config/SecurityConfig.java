@@ -3,6 +3,7 @@ package com.dyno.config;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -55,9 +57,13 @@ public class SecurityConfig {
 	    }
 
 	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http,JwtAuthenticationConverter jwtAuthenticationConverter)
+	public SecurityFilterChain securityFilterChain(HttpSecurity http,
+			JwtAuthenticationConverter jwtAuthenticationConverter,
+			@Qualifier("corsConfigSource") CorsConfigurationSource  corsConfigurationSource
+			)
 			throws Exception {
 		http
+			.cors(cors->cors.configurationSource(corsConfigurationSource))
 			.csrf(csrf-> csrf.disable())
 			.authorizeHttpRequests(auth-> auth
 					.requestMatchers("/",  "/api/v1/auth/**","/api/v1/admin/auth/**").permitAll()
