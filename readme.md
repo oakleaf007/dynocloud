@@ -6,18 +6,20 @@ It provides secure user authentication, file management, object storage integrat
 
 ## Features
 
-- User registration and login.
+- User registration and login (for JWT based auth, check AuthController and the endpoints).
 - JWT authentication using RSA (RS256).
 - BCrypt password hashing.
 - PostgreSQL database integration.
-- File upload, download, and deletion.
-- Garage and AWS S3 storage support.
-- Storage quota management.
-- Presigned URLs for secure file downloads.
+- File upload, download, rename and deletion.
+- Garage and AWS S3 storage support (self hosted Garage fully working).
+- Storage quota management(Not really management but automated calculation during upload or delete.)
+- Native browser download.
 - AES-256-GCM envelope encryption.
 - Self-hosted key management using OpenBao.
-- Recovery-phrase-based password recovery.
-- Admin panel for storage overview.
+- Recovery-phrase-based password recovery (No Email based recovery available).
+- Admin creation with single-time bootstrap pattern.
+- Admin panel for storage overview (currently you can see only total used & total files).
+- Session based authentication added (seperate endpoints, check SessionAuthController).
 
 ## Tech Stack
 
