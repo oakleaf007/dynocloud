@@ -70,7 +70,7 @@ public class SecurityConfig {
 			.cors(cors->cors.configurationSource(corsConfigurationSource))
 			.csrf(csrf-> csrf.disable())
 			.authorizeHttpRequests(auth-> auth
-					.requestMatchers("/",  "/api/v1/auth/**","/api/v1/admin/auth/**", "/api/v1/files/**").permitAll()
+					.requestMatchers("/",  "/api/v1/auth/**","/api/v1/admin/auth/**", "/api/v1/files/**", "/dead-drops/**").permitAll()
 					.requestMatchers("/api/v1/admin/storage/**")
 					.hasRole("ADMIN")
 					.anyRequest().authenticated()

@@ -20,6 +20,12 @@ It provides secure user authentication, file management, object storage integrat
 - Admin creation with single-time bootstrap pattern.
 - Admin panel for storage overview (currently you can see only total used & total files).
 - Session based authentication added (seperate endpoints, check SessionAuthController).
+- Temp file upload/ dead-drop feature added(upload & download only).
+
+
+## Note
+
+Streaming isn't seekable yet.
 
 ## Tech Stack
 
