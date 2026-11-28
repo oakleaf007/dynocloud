@@ -2,6 +2,7 @@
 package com.dyno.deaddrop.repository;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,12 +24,17 @@ public interface DeadDropJpaRepository
     );
 
     @Query("""
-        SELECT d FROM DeadDropEntity d
-        WHERE d.status = :status
-        AND d.expiresAt <= :now
-    """)
-    List<DeadDropEntity> findExpiredDrops(
-        @Param("status") DeadDropStatus status,
-        @Param("now") Instant now
-    );
+    	    SELECT d FROM DeadDropEntity d
+    	    WHERE d.expiresAt <= :now
+    	    AND d.status IN :statuses
+    	""")
+    	List<DeadDropEntity> findExpiredDrops(
+    	        @Param("statuses") Collection<DeadDropStatus> statuses,
+    	        @Param("now") Instant now
+    	);
+    List<DeadDropEntity>
+    findTop100ByExpiresAtLessThanEqualAndStatusInOrderByExpiresAtAsc(
+            Instant now,
+            Collection<DeadDropStatus> statuses
+    );	
 }

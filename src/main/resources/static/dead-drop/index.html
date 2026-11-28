@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#090d18">
+
+    <title>D-DROP</title>
+
+    <link rel="stylesheet" href="/dead-drop/styles.css">
+</head>
+
+<body>
+
+    <header class="navbar">
+        <a href="/" class="brand">
+            <span class="brand-icon">D</span>
+            <span>D-DROP</span>
+        </a>
+<!---
+        <span class="nav-label">D-DROP</span>
+  --->
+    </header>
+
+    <main class="container">
+
+        <section class="hero">
+
+            <div class="status">
+                
+                 Send files privately without creating an account.
+            </div>
+
+            <h3>
+               Upload self-encrypted files for better security.<br>
+                <span>We Encrypt your file with AES 256 and KEK handled by OpenBao KMS.</span>
+               
+            </h3>
+
+
+
+        </section>
+
+        <section class="upload-card">
+
+            <div class="card-heading">
+                <div>
+                    <h2>Upload a file(Max: 500MB)</h2>
+                    <p>Your file will be available for 24 hours.</p>
+                </div>
+
+                <span class="lock-icon">🔒</span>
+            </div>
+
+            <form
+                action="/dead-drops"
+                method="POST"
+                enctype="multipart/form-data"
+            >
+
+                <label for="file" class="drop-zone">
+
+                    <div class="upload-icon">
+                        <svg viewBox="0 0 24 24"
+                             fill="none"
+                             stroke="currentColor"
+                             stroke-width="1.6"
+                             stroke-linecap="round"
+                             stroke-linejoin="round">
+                            <path d="M12 16V4"/>
+                            <path d="m7 9 5-5 5 5"/>
+                            <path d="M20 16.5v2A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5v-2"/>
+                        </svg>
+                    </div>
+
+                    <h3>Choose a file to upload</h3>
+
+                    <p>
+                        Select a file from your device
+                    </p>
+
+                    <span class="browse-button">
+                        Browse files
+                    </span>
+
+                    <input
+                        type="file"
+                        id="file"
+                        name="file"
+                        required
+                    >
+
+                </label>
+
+                <div class="upload-info">
+                    <span> <span class="info-dot"></span> Encrypted before storage</span>
+                   
+                </div>
+
+                <button type="submit" class="upload-button">
+                    Upload
+                    <span>→</span>
+                </button>
+
+            </form>
+
+            <div class="expiry-notice">
+                <span class="expiry-icon">◷</span>
+
+               
+            </div>
+
+        </section>
+
+
+<section class="download-card">
+
+    <div class="card-heading">
+        <div>
+            <h2>Download a file</h2>
+            <p>Have an existing Dead Drop link? Download it here.</p>
+        </div>
+
+        <span class="lock-icon">↓</span>
+    </div>
+
+    <form action="/dead-drops/resolve" method="GET">
+
+        <input
+            type="text"
+            name="token"
+            placeholder="Paste your Dead Drop URL or token"
+            required
+        >
+
+        <button type="submit" class="upload-button">
+            Download
+            <span>→</span>
+        </button>
+
+    </form>
+
+</section>
+
+        <footer>
+            <p>PRIVATE BY DESIGN. TEMPORARY BY DEFAULT.</p>
+            <span>© D-DROP</span>
+        </footer>
+
+    </main>
+
+</body>
+</html>

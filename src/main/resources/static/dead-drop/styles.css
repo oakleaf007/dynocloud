@@ -1,0 +1,245 @@
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: #0b0b0b;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+}
+
+/* Header */
+
+.navbar {
+    height: 52px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #ddd;
+}
+
+.brand {
+   
+    text-decoration: none;
+    font-size: 17px;
+    font-weight: bold;
+}
+
+.brand-icon {
+    display: none;
+}
+
+.nav-label {
+   
+    font-size: 11px;
+}
+
+/* Content */
+
+.container {
+    width: calc(100% - 32px);
+    max-width: 440px;
+    margin: 55px auto;
+}
+
+.hero {
+    margin-bottom: 28px;
+}
+
+.status {
+
+    font-size: 11px;
+    margin-bottom: 14px;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 5px;
+    border-radius: 50%;
+    background: #39834a;
+}
+
+.hero h3 {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.hero h3 span {
+    color: #245b9e;
+}
+
+.subtitle {
+    margin-top: 10px;
+   
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* Upload */
+
+.upload-card {
+    padding: 0;
+    background: #0b0b0b;
+    border: none;
+}
+
+.card-heading {
+    margin-bottom: 14px;
+}
+
+.card-heading h2 {
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.card-heading p {
+   
+    font-size: 12px;
+}
+
+.lock-icon {
+    display: none;
+}
+
+/* File input area */
+
+.drop-zone {
+    min-height: 135px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border: 1px dashed #aaa;
+    background: #fafafa;
+    cursor: pointer;
+}
+
+.drop-zone:hover {
+    border-color: #245b9e;
+}
+
+.upload-icon {
+    display: none;
+}
+
+.drop-zone h3 {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.drop-zone p {
+    margin-top: 7px;
+    color: #111;
+    font-size: 12px;
+}
+
+.browse-button {
+    margin-top: 12px;
+    padding: 7px 13px;
+    border: 1px solid #aaa;
+    background: #fff;
+    color: #245b9e;
+    font-size: 12px;
+}
+
+.drop-zone input[type="file"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
+
+/* Information */
+
+.upload-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin: 13px 0;
+    color: #666;
+    font-size: 11px;
+}
+
+.info-dot {
+    display: none;
+}
+
+/* Submit */
+
+.upload-button {
+    width: 100%;
+    padding: 11px;
+    border: none;
+    background: #245b9e;
+    color: #fff;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.upload-button:hover {
+    background: #194678;
+}
+
+.upload-button span {
+    display: none;
+}
+
+/* Expiry */
+
+.expiry-notice {
+    margin-top: 14px;
+    padding: 10px 0;
+    border-top: 1px solid #ddd;
+}
+
+.expiry-icon {
+    display: none;
+}
+
+.expiry-notice strong {
+    font-size: 12px;
+}
+
+.expiry-notice p {
+    margin-top: 4px;
+  
+    font-size: 11px;
+}
+
+/* Download section*/
+
+.download-card input{
+	width:100%;
+	padding: 10px;
+	
+}
+
+
+/* Footer */
+
+footer {
+    margin-top: 35px;
+    padding-top: 12px;
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid #ddd;
+  
+    font-size: 10px;
+}
+
+@media (max-width: 480px) {
+    .container {
+        margin-top: 35px;
+    }
+}

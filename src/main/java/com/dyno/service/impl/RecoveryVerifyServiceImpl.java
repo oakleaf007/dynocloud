@@ -57,20 +57,20 @@ public class RecoveryVerifyServiceImpl implements RecoveryVerifyService{
 			 String tokenHash =resetTokenService.hashResetToken(resetToken);
 
 		       
-		        // 5. Invalidate previous reset tokens
+		        // Invalidate previous reset tokens
 		        resetTokenRepository.deleteAllByUser(user);
 
-		        // 6. Create new reset token
+		        // Create new reset token
 		        PasswordResetToken token = new PasswordResetToken(
 		                user,
 		                tokenHash,
 		                Instant.now().plus(10, ChronoUnit.MINUTES)
 		        );
 
-		        // 7. Save token hash
+		        // Save token hash
 		        resetTokenRepository.save(token);
 
-		        // 8. Return original token
+		        // Return original token
 		        return resetToken;
 		    }
 		

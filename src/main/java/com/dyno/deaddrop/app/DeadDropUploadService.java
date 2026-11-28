@@ -31,7 +31,7 @@ public class DeadDropUploadService {
     private static final Logger LOGGER =
             Logger.getLogger(DeadDropUploadService.class.getName());
 
-    private static final long EXPIRATION_SECONDS = 86400L;
+    private static final long EXPIRATION_SECONDS = 60L;
 
     // V3 = chunked AES-256-GCM encryption format.
     private static final int ENCRYPTION_VERSION = 3;
